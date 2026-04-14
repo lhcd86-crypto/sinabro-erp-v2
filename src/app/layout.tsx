@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
+import I18nProvider from '@/components/I18nProvider'
 import './globals.css'
 
 const inter = Inter({
@@ -34,7 +35,9 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${inter.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
+        <I18nProvider>
         {children}
+        </I18nProvider>
         <Toaster
           position="top-right"
           toastOptions={{

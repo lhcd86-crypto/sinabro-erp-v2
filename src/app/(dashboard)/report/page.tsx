@@ -8,6 +8,7 @@ import {
   type MaterialQty,
   type ExtraMaterial,
 } from '@/hooks/useDailyReport'
+import { useAutoSave } from '@/hooks/useAutoSave'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -35,6 +36,16 @@ const emptyMaterials = (): MaterialQty => ({
   v250: 0, sv250: 0, hlm: 0, m230: 0, db2015: 0, etc: 0,
 })
 
+interface DraftData {
+  date: string
+  workType: string
+  weather: string
+  workers: WorkerCounts
+  materials: MaterialQty
+  extraMaterials: ExtraMaterial[]
+  description: string
+}
+
 export default function ReportPage() {
   const user = useAuthStore((s) => s.user)
   const currentProject = useAuthStore((s) => s.currentProject)
@@ -56,11 +67,54 @@ export default function ReportPage() {
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [showRestore, setShowRestore] = useState(false)
+  const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null)
+
+  /* ── Auto-save ── */
+  const { save: autoSave, load: autoLoad, clear: autoClear } = useAutoSave<DraftData>('daily-report')
 
   /* Load my reports on mount / project change */
   useEffect(() => {
     loadMyReports(currentProject ?? undefined)
   }, [currentProject, loadMyReports])
+
+  /* Check for auto-saved draft on mount */
+  useEffect(() => {
+    const saved = autoLoad()
+    if (saved) {
+      setShowRestore(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /* ── Auto-save on form changes ── */
+  useEffect(() => {
+    // Only auto-save if there is actual content
+    if (!description && !workers.wd_am && !workers.wd_pm) return
+    autoSave({ date, workType, weather, workers, materials, extraMaterials, description })
+    setAutoSavedAt(new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }))
+  }, [date, workType, weather, workers, materials, extraMaterials, description, autoSave])
+
+  /* ── Restore draft handler ── */
+  const handleRestore = () => {
+    const saved = autoLoad()
+    if (saved) {
+      const d = saved.data
+      setDate(d.date)
+      setWorkType(d.workType)
+      setWeather(d.weather)
+      setWorkers(d.workers)
+      setMaterials(d.materials)
+      setExtraMaterials(d.extraMaterials)
+      setDescription(d.description)
+    }
+    setShowRestore(false)
+  }
+
+  const handleDismissRestore = () => {
+    autoClear()
+    setShowRestore(false)
+  }
 
   /* ── Worker helpers ── */
   const wk = (field: keyof WorkerCounts, val: string) => {
@@ -140,6 +194,8 @@ export default function ReportPage() {
         photos,
       })
       setSuccess(true)
+      autoClear()
+      setAutoSavedAt(null)
       // Reset form
       setDate(today())
       setWorkType('주간')
@@ -215,14 +271,53 @@ export default function ReportPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* ── Header ── */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Nhat ky cong trinh / 일보 입력
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Nhap bao cao hang ngay / 매일 작업 일보를 작성합니다
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Nhat ky cong trinh / 일보 입력
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Nhap bao cao hang ngay / 매일 작업 일보를 작성합니다
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {autoSavedAt && (
+            <span className="text-[10px] text-gray-400 whitespace-nowrap">
+              Auto-saved / 자동저장됨 {autoSavedAt}
+            </span>
+          )}
+          <button
+            onClick={() => window.print()}
+            className="print:hidden inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
+            title="In / 인쇄"
+          >
+            &#128424; In / 인쇄
+          </button>
+        </div>
       </div>
+
+      {/* Restore draft banner */}
+      {showRestore && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 flex items-center justify-between gap-3">
+          <span>
+            Co ban nhap chua luu. Khoi phuc? / 저장되지 않은 초안이 있습니다. 복구할까요?
+          </span>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={handleRestore}
+              className="px-3 py-1 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700"
+            >
+              Khoi phuc / 복구
+            </button>
+            <button
+              onClick={handleDismissRestore}
+              className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-300"
+            >
+              Bo qua / 무시
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Success banner */}
       {success && (

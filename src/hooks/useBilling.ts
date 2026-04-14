@@ -128,7 +128,52 @@ export function useBilling() {
       }
 
       if (err) throw new Error(err.message)
+
+      // ── 선급금 자동 공제 (FIFO: 먼저 받은 선급금부터) ──
+      let deductionMessage = ''
+      try {
+        const { data: prepays } = await supabase
+          .from('prepayments')
+          .select('*')
+          .eq('project_id', currentProject)
+          .in('status', ['미공제', '일부공제'])
+          .order('recv_date', { ascending: true }) // FIFO
+
+        let remainingClaim = rec.amount
+        const deductions: { id: string; amount: number }[] = []
+
+        for (const pp of prepays ?? []) {
+          if (remainingClaim <= 0) break
+          const alreadyDeducted = pp.deducted || 0
+          const ppRemain = (pp.amount || 0) - alreadyDeducted
+          if (ppRemain <= 0) continue
+
+          const deductNow = Math.min(ppRemain, remainingClaim)
+          const newDeducted = alreadyDeducted + deductNow
+          const newStatus =
+            newDeducted >= (pp.amount || 0) ? '전액공제' : '일부공제'
+
+          const { error: updErr } = await supabase
+            .from('prepayments')
+            .update({ deducted: newDeducted, status: newStatus })
+            .eq('id', pp.id)
+
+          if (updErr) continue // 다른 선급금은 계속 시도
+          deductions.push({ id: pp.id, amount: deductNow })
+          remainingClaim -= deductNow
+        }
+
+        if (deductions.length > 0) {
+          const totalDeducted = deductions.reduce((s, d) => s + d.amount, 0)
+          deductionMessage = `선급금 ${totalDeducted.toLocaleString()} 자동 공제 (${deductions.length}건)`
+        }
+      } catch {
+        // 선급금 공제 실패해도 기성 저장은 완료된 상태
+      }
+
       await loadBillings()
+      await loadPrepayments()
+      return deductionMessage
     },
     [user, currentProject, loadBillings],
   )

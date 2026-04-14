@@ -166,13 +166,22 @@ export default function AttendancePage() {
       )}
 
       {/* Page title */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Cham cong / 출퇴근
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Quan ly cham cong hang ngay / 일일 출퇴근 관리
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Cham cong / 출퇴근
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Quan ly cham cong hang ngay / 일일 출퇴근 관리
+          </p>
+        </div>
+        <button
+          onClick={() => window.print()}
+          className="print:hidden inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
+          title="In / 인쇄"
+        >
+          &#128424; In / 인쇄
+        </button>
       </div>
 
       {/* ── Summary Cards ── */}

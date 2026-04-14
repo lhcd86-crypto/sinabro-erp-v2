@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/roles'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useI18n } from '@/lib/i18n'
 
 interface TopBarProps {
   onMenuToggle: () => void
@@ -19,7 +20,7 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
   const setCurrentProject = useAuthStore((s) => s.setCurrentProject)
   const logout = useAuthStore((s) => s.logout)
 
-  const [lang, setLang] = useState<'KO' | 'VI'>('KO')
+  const { t, lang, toggleLang } = useI18n()
   const [notifOpen, setNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications()
@@ -71,7 +72,7 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
           onChange={(e) => setCurrentProject(e.target.value || null)}
           className="w-full max-w-xs px-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
-          <option value="">-- Chọn CT / 현장 선택 --</option>
+          <option value="">-- {t('select_project')} --</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
               {p.code} — {p.name}
@@ -85,7 +86,7 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
         <button
           onClick={() => setNotifOpen((v) => !v)}
           className="relative p-1.5 text-gray-500 hover:text-gray-700 transition"
-          title="Thông báo / 알림"
+          title={t('notifications')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -100,16 +101,16 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
         {notifOpen && (
           <div className="absolute right-0 top-full mt-1 w-80 max-h-96 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50">
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
-              <span className="text-xs font-semibold text-gray-700">Thông báo / 알림</span>
+              <span className="text-xs font-semibold text-gray-700">{t('notifications')}</span>
               {unreadCount > 0 && (
                 <button onClick={markAllRead} className="text-[10px] text-blue-600 hover:underline">
-                  Đọc tất cả / 모두 읽음
+                  {t('read_all')}
                 </button>
               )}
             </div>
             {notifications.length === 0 ? (
               <div className="p-6 text-center text-xs text-gray-400">
-                Không có thông báo / 알림 없음
+                {t('no_notifications')}
               </div>
             ) : (
               notifications.slice(0, 20).map((n) => (
@@ -146,10 +147,12 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
 
       {/* Language toggle */}
       <button
-        onClick={() => setLang((l) => (l === 'KO' ? 'VI' : 'KO'))}
+        onClick={toggleLang}
         className="hidden sm:flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 border border-gray-200 rounded-md transition"
+        title={lang === 'ko' ? 'Vietnamese / 베트남어' : 'Korean / 한국어'}
       >
-        {lang === 'KO' ? '한' : 'VI'}
+        {lang === 'ko' ? '한' : 'VI'}
+        <span className="text-[10px] text-gray-400 uppercase">{lang}</span>
       </button>
 
       {/* User info */}
@@ -171,7 +174,7 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
       <button
         onClick={handleLogout}
         className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
-        title="Đăng xuất / 로그아웃"
+        title={t('logout')}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

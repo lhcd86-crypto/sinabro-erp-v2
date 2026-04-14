@@ -60,13 +60,22 @@ export default function SalaryPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Quan ly luong / 급여 관리
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Cai dat va tinh luong hang thang / 급여 설정 및 월별 급여 계산
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Quan ly luong / 급여 관리
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Cai dat va tinh luong hang thang / 급여 설정 및 월별 급여 계산
+          </p>
+        </div>
+        <button
+          onClick={() => window.print()}
+          className="print:hidden inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
+          title="In / 인쇄"
+        >
+          &#128424; In / 인쇄
+        </button>
       </div>
 
       {/* Tabs */}

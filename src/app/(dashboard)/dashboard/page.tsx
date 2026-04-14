@@ -4,6 +4,19 @@ import { useEffect, useState, useCallback } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { isTop } from '@/lib/roles'
 import { supabase } from '@/lib/supabase'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Title,
+} from 'chart.js'
+import { Bar, Pie, Doughnut } from 'react-chartjs-2'
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title)
 
 /* ── Types ── */
 
@@ -33,6 +46,16 @@ interface ActivityItem {
   user_name: string
 }
 
+interface MonthlyAttendance {
+  label: string
+  count: number
+}
+
+interface ExpenseCategory {
+  category: string
+  total: number
+}
+
 /* ── Helpers ── */
 
 function fmtVND(n: number): string {
@@ -53,6 +76,35 @@ function thisMonthStart(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
 }
 
+/** Return last N months as { label, start, end } */
+function lastNMonths(n: number): { label: string; start: string; end: string }[] {
+  const months: { label: string; start: string; end: string }[] = []
+  const now = new Date()
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const year = d.getFullYear()
+    const month = d.getMonth() + 1
+    const start = `${year}-${String(month).padStart(2, '0')}-01`
+    const lastDay = new Date(year, month, 0).getDate()
+    const end = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    const label = `${String(month).padStart(2, '0')}/${year}`
+    months.push({ label, start, end })
+  }
+  return months
+}
+
+/* ── Chart colors ── */
+const CHART_COLORS = [
+  'rgba(59, 130, 246, 0.8)',
+  'rgba(16, 185, 129, 0.8)',
+  'rgba(249, 115, 22, 0.8)',
+  'rgba(239, 68, 68, 0.8)',
+  'rgba(139, 92, 246, 0.8)',
+  'rgba(236, 72, 153, 0.8)',
+  'rgba(14, 165, 233, 0.8)',
+  'rgba(245, 158, 11, 0.8)',
+]
+
 /* ── Component ── */
 
 export default function DashboardPage() {
@@ -62,6 +114,8 @@ export default function DashboardPage() {
   const [kpi, setKpi] = useState<KPI>({ totalProjects: 0, activeWorkers: 0, monthlyExpense: 0, pendingApprovals: 0 })
   const [projectSummaries, setProjectSummaries] = useState<ProjectSummary[]>([])
   const [activities, setActivities] = useState<ActivityItem[]>([])
+  const [monthlyAttendance, setMonthlyAttendance] = useState<MonthlyAttendance[]>([])
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([])
   const [loading, setLoading] = useState(false)
 
   const canAccess = user && isTop(user.role)
@@ -149,6 +203,35 @@ export default function DashboardPage() {
       }
       setProjectSummaries(summaries)
 
+      // ── Chart data: Monthly attendance (last 6 months) ──
+      const months = lastNMonths(6)
+      const attByMonth: MonthlyAttendance[] = []
+      for (const m of months) {
+        const { count: mc } = await supabase
+          .from('employee_attendance')
+          .select('id', { count: 'exact', head: true })
+          .gte('work_date', m.start)
+          .lte('work_date', m.end)
+        attByMonth.push({ label: m.label, count: mc ?? 0 })
+      }
+      setMonthlyAttendance(attByMonth)
+
+      // ── Chart data: Expense by category ──
+      const { data: catExpenses } = await supabase
+        .from('expenses')
+        .select('category, total_amount')
+        .gte('expense_date', monthStart)
+        .lte('expense_date', today)
+
+      const catMap: Record<string, number> = {}
+      for (const e of catExpenses ?? []) {
+        const cat = e.category || 'other'
+        catMap[cat] = (catMap[cat] ?? 0) + (e.total_amount ?? 0)
+      }
+      const catArr: ExpenseCategory[] = Object.entries(catMap).map(([category, total]) => ({ category, total }))
+      catArr.sort((a, b) => b.total - a.total)
+      setExpenseCategories(catArr)
+
       // Recent activity: last 10 attendance + leave events
       const { data: recentAtt } = await supabase
         .from('employee_attendance')
@@ -207,6 +290,91 @@ export default function DashboardPage() {
         <p className="text-gray-500 text-sm">Khong co quyen truy cap / 접근 권한이 없습니다</p>
       </div>
     )
+  }
+
+  /* ── Chart configs ── */
+
+  const attendanceChartData = {
+    labels: monthlyAttendance.map((m) => m.label),
+    datasets: [
+      {
+        label: 'Cham cong / 출근',
+        data: monthlyAttendance.map((m) => m.count),
+        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 1,
+        borderRadius: 4,
+      },
+    ],
+  }
+
+  const attendanceChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      title: { display: false },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { precision: 0 },
+      },
+    },
+  }
+
+  const expenseChartData = {
+    labels: expenseCategories.map((c) => c.category),
+    datasets: [
+      {
+        data: expenseCategories.map((c) => c.total),
+        backgroundColor: CHART_COLORS.slice(0, expenseCategories.length),
+        borderWidth: 1,
+        borderColor: '#fff',
+      },
+    ],
+  }
+
+  const expenseChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right' as const,
+        labels: { boxWidth: 12, font: { size: 11 } },
+      },
+    },
+  }
+
+  const progressChartData = {
+    labels: projectSummaries.map((p) => p.code),
+    datasets: [
+      {
+        data: projectSummaries.map((p) => p.progress),
+        backgroundColor: CHART_COLORS.slice(0, projectSummaries.length),
+        borderWidth: 2,
+        borderColor: '#fff',
+      },
+    ],
+  }
+
+  const progressChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '55%',
+    plugins: {
+      legend: {
+        position: 'right' as const,
+        labels: { boxWidth: 12, font: { size: 11 } },
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx: { label?: string; parsed?: number }) => {
+            return `${ctx.label ?? ''}: ${ctx.parsed ?? 0}%`
+          },
+        },
+      },
+    },
   }
 
   return (
@@ -293,6 +461,57 @@ export default function DashboardPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ── Charts Section ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly attendance bar chart */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            Cham cong theo thang / 월별 출근 현황
+          </h2>
+          <div className="h-64">
+            {monthlyAttendance.length > 0 ? (
+              <Bar data={attendanceChartData} options={attendanceChartOptions} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm text-gray-400">
+                {loading ? 'Dang tai... / 로딩 중...' : 'Khong co du lieu / 데이터 없음'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Expense by category pie chart */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            Chi phi theo loai / 분류별 지출
+          </h2>
+          <div className="h-64">
+            {expenseCategories.length > 0 ? (
+              <Pie data={expenseChartData} options={expenseChartOptions} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm text-gray-400">
+                {loading ? 'Dang tai... / 로딩 중...' : 'Khong co du lieu / 데이터 없음'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Project progress doughnut chart */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 lg:col-span-2 max-w-lg mx-auto w-full">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            Tien do du an / 프로젝트 진행률
+          </h2>
+          <div className="h-72">
+            {projectSummaries.length > 0 ? (
+              <Doughnut data={progressChartData} options={progressChartOptions} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm text-gray-400">
+                {loading ? 'Dang tai... / 로딩 중...' : 'Khong co du lieu / 데이터 없음'}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

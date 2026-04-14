@@ -173,6 +173,39 @@ export function useDailyReport() {
       setError(null)
 
       try {
+        // ── 인원수 검증: workforce_photos 대비 20% 이상 차이 경고 ──
+        const totalWorkers = Object.values(data.workers as unknown as Record<string, number>).reduce(
+          (sum, n) => sum + (typeof n === 'number' ? n : 0),
+          0
+        )
+        if (totalWorkers > 0) {
+          try {
+            const { data: rcData } = await supabase
+              .from('workforce_photos')
+              .select('worker_ids')
+              .eq('project_id', data.project_id)
+              .eq('photo_date', data.date)
+              .limit(10)
+            const photoHeadcount = (rcData ?? []).reduce((sum, rc) => {
+              const ids = rc.worker_ids as string[] | null
+              return sum + (ids?.length ?? 0)
+            }, 0)
+            if (photoHeadcount > 0) {
+              const diff = Math.abs(totalWorkers - photoHeadcount) / photoHeadcount
+              if (diff > 0.2) {
+                const msg = `일보 인원(${totalWorkers})과 출석체크 인원(${photoHeadcount})이 ` +
+                  `${Math.round(diff * 100)}% 차이납니다. 확인해주세요. / ` +
+                  `Số người trong báo cáo (${totalWorkers}) chênh lệch ${Math.round(diff * 100)}% so với điểm danh (${photoHeadcount}).`
+                console.warn('[headcount]', msg)
+                // Return warning message to caller for UI display
+                ;(data as unknown as Record<string, unknown>)._headcountWarning = msg
+              }
+            }
+          } catch {
+            // headcount validation failure is non-blocking
+          }
+        }
+
         // Upload photos first
         let photoUrls: string[] = []
         if (data.photos.length > 0) {
