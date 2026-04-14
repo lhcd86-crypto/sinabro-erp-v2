@@ -13,18 +13,19 @@ export const metadata: Metadata = {
   description:
     'Construction site management ERP for Sinabro Vina Co., Ltd — 시나브로 비나 건설현장 관리 시스템',
   manifest: '/manifest.json',
-  themeColor: '#2563eb',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: '시나브로 ERP',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#2563eb',
 }
 
 export default function RootLayout({
