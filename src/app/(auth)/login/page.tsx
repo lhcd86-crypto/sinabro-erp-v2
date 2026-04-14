@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/authStore'
 /* ── 역할별 사용자 목록 ── */
 const QUICK_USERS = [
   { email: 'hun.sinabro@gmail.com',         name: 'leehun',           role: 'ceo',        icon: '👔', label: '대표 / GĐ',        color: 'from-red-500 to-rose-600' },
-  { email: 'HOALE.SINABRO@GMAIL.COM',       name: 'HOA LE',           role: 'director_m',  icon: '🏢', label: '관리임원 / QL',     color: 'from-purple-500 to-violet-600' },
+  { email: 'hoale.sinabro@gmail.com',        name: 'HOA LE',           role: 'director_m',  icon: '🏢', label: '관리임원 / QL',     color: 'from-purple-500 to-violet-600' },
   { email: 'nguyenkhiet.sinabro@gmail.com', name: 'NGUYEN QUANG KHIET', role: 'director_f', icon: '🏗️', label: '현장임원 / CT',     color: 'from-indigo-500 to-blue-600' },
   { email: 'test2.sinabro@gmail.com',       name: 'test2_회계',       role: 'account',     icon: '💰', label: '회계 / KT',         color: 'from-emerald-500 to-teal-600' },
   { email: 'test3.sinabro@gmail.com',       name: 'test3_총무',       role: 'hr',          icon: '👥', label: '인사총무 / HC',     color: 'from-cyan-500 to-sky-600' },
