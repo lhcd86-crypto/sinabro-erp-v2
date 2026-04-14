@@ -38,7 +38,7 @@ export default function LoginPage() {
       setError(`${userEmail}: ${result.error}`)
       setLoadingUser(null)
     } else {
-      router.push('/dashboard')
+      router.push('/home')
     }
   }
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
       setError(result.error)
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      router.push('/home')
     }
   }
 

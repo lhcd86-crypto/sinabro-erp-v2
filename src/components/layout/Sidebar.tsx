@@ -19,25 +19,25 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   /** Map menu id to route path */
   const ROUTE_MAP: Record<string, string> = {
-    home: '/dashboard',
-    multi_site: '/dashboard/multi-site',
-    cost_analysis: '/dashboard/cost-analysis',
-    leave_mgmt: '/dashboard/leave-mgmt',
-    leave_all: '/dashboard/leave-mgmt',
-    attendance_all: '/dashboard/attendance_mgmt',
-    expense_all: '/dashboard/expense',
-    billing_all: '/dashboard/billing',
-    billing_status: '/dashboard/billing_status',
-    staff_all: '/dashboard/staff',
-    sys_settings: '/dashboard/settings',
-    costana: '/dashboard/costana',
-    dashboard_all: '/dashboard/dashboard',
-    report: '/dashboard/report',
-    security_all: '/dashboard/security_all',
+    home: '/home',
+    multi_site: '/multi-site',
+    cost_analysis: '/cost-analysis',
+    leave_mgmt: '/leave-mgmt',
+    leave_all: '/leave-mgmt',
+    attendance_all: '/attendance_mgmt',
+    expense_all: '/expense',
+    billing_all: '/billing',
+    billing_status: '/billing_status',
+    staff_all: '/staff',
+    sys_settings: '/settings',
+    costana: '/costana',
+    dashboard_all: '/dashboard',
+    report: '/report',
+    security_all: '/security_all',
   }
 
   function menuHref(id: string): string {
-    return ROUTE_MAP[id] ?? `/dashboard/${id}`
+    return ROUTE_MAP[id] ?? `/${id}`
   }
 
   function isActive(id: string): boolean {
