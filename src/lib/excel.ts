@@ -59,7 +59,7 @@ export function exportToCsv(
     ),
   ]
 
-  const blob = new Blob(['\uFEFF' + csvRows.join('\n')], {
+  const blob = new Blob(['﻿' + csvRows.join('\n')], {
     type: 'text/csv;charset=utf-8;',
   })
   const url = URL.createObjectURL(blob)

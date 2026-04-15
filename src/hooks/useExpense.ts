@@ -30,18 +30,18 @@ export interface ExpenseRecord {
 }
 
 export type ExpenseCategory =
-  | '\uC790\uC7AC'      // 자재
-  | '\uC7A5\uBE44'      // 장비
-  | '\uC778\uAC74\uBE44' // 인건비
-  | '\uAD50\uD1B5'      // 교통
-  | '\uAE30\uD0C0'      // 기타
+  | '자재'      // 자재
+  | '장비'      // 장비
+  | '인건비' // 인건비
+  | '교통'      // 교통
+  | '기타'      // 기타
 
 export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: '\uC790\uC7AC', label: 'Vat tu / \uC790\uC7AC' },
-  { value: '\uC7A5\uBE44', label: 'Thiet bi / \uC7A5\uBE44' },
-  { value: '\uC778\uAC74\uBE44', label: 'Nhan cong / \uC778\uAC74\uBE44' },
-  { value: '\uAD50\uD1B5', label: 'Giao thong / \uAD50\uD1B5' },
-  { value: '\uAE30\uD0C0', label: 'Khac / \uAE30\uD0C0' },
+  { value: '자재', label: 'Vat tu / 자재' },
+  { value: '장비', label: 'Thiet bi / 장비' },
+  { value: '인건비', label: 'Nhan cong / 인건비' },
+  { value: '교통', label: 'Giao thong / 교통' },
+  { value: '기타', label: 'Khac / 기타' },
 ]
 
 /* ── Hook ──────────────────────────────────────────── */
@@ -116,7 +116,7 @@ export function useExpense() {
         doc_url: rec.doc_url ?? null,
         submitted_by: user.id,
         submitted_role: user.role,
-        status: '\uB300\uAE30', // 대기
+        status: '대기', // 대기
         current_step: 'submitted',
         approval_chain: {
           submitted: {
@@ -167,7 +167,7 @@ export function useExpense() {
           vendor: rec.vendor,
           total_amount: rec.total_amount,
           submitted_by: user.id,
-          status: '\uB300\uAE30',
+          status: '대기',
         }
         ;({ error: err } = await supabase.from('expenses').insert(minData))
       }
@@ -201,7 +201,7 @@ export function useExpense() {
       if (!user) return
       const { error: err } = await supabase
         .from('expenses')
-        .update({ status: '\uC2B9\uC778' }) // 승인
+        .update({ status: '승인' }) // 승인
         .eq('id', id)
 
       if (err) throw new Error(err.message)
@@ -216,7 +216,7 @@ export function useExpense() {
       if (!user) return
       const { error: err } = await supabase
         .from('expenses')
-        .update({ status: '\uBC18\uB824' }) // 반려
+        .update({ status: '반려' }) // 반려
         .eq('id', id)
 
       if (err) throw new Error(err.message)

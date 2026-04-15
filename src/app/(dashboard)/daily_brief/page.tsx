@@ -345,8 +345,8 @@ export default function DailyBriefPage() {
                 <div className="w-14 h-14 rounded-xl bg-sky-50 flex items-center justify-center text-2xl">
                   {new Date(selectedDate + 'T00:00:00').getMonth() >= 4 &&
                    new Date(selectedDate + 'T00:00:00').getMonth() <= 9
-                    ? '\u2600\uFE0F'
-                    : '\u2601\uFE0F'}
+                    ? '☀️'
+                    : '☁️'}
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-700">

@@ -151,7 +151,7 @@ export function useAdvance() {
         detail: rec.detail,
         receipt_type: rec.receipt_type,
         receipt_url: rec.receipt_url ?? null,
-        status: '\uB300\uAE30\uC911', // 대기중
+        status: '대기중', // 대기중
         current_step: 'recorded',
         approval_chain: {
           recorded: {
@@ -207,9 +207,9 @@ export function useAdvance() {
         user_id: user.id,
         amount: rec.amount,
         needed_date: rec.needed_date,
-        purpose: rec.purpose || '\uAE30\uD0C0',
+        purpose: rec.purpose || '기타',
         reason: rec.reason,
-        status: '\uB300\uAE30', // 대기
+        status: '대기', // 대기
         current_step: 'requested',
         approval_chain: {
           requested: {
@@ -247,7 +247,7 @@ export function useAdvance() {
           user_id: user.id,
           amount: rec.amount,
           needed_date: rec.needed_date,
-          status: '\uB300\uAE30',
+          status: '대기',
         }
         ;({ error: err } = await supabase
           .from('advance_requests')
@@ -267,7 +267,7 @@ export function useAdvance() {
       const { error: err } = await supabase
         .from('advances')
         .update({
-          status: '\uC815\uC0B0\uC644\uB8CC', // 정산완료
+          status: '정산완료', // 정산완료
           current_step: 'settled',
         })
         .eq('id', id)
@@ -284,7 +284,7 @@ export function useAdvance() {
       if (!user) return
       const { error: err } = await supabase
         .from('advance_requests')
-        .update({ status: '\uC2B9\uC778' }) // 승인
+        .update({ status: '승인' }) // 승인
         .eq('id', id)
 
       if (err) throw new Error(err.message)
@@ -299,7 +299,7 @@ export function useAdvance() {
       if (!user) return
       const { error: err } = await supabase
         .from('advance_requests')
-        .update({ status: '\uAC70\uC808' }) // 거절
+        .update({ status: '거절' }) // 거절
         .eq('id', id)
 
       if (err) throw new Error(err.message)

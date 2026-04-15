@@ -13,19 +13,19 @@ import {
 /* ── Helpers ───────────────────────────────────────── */
 
 const STATUS_MAP: Record<string, { bg: string; text: string; label: string }> = {
-  '\uB300\uAE30': { bg: 'bg-yellow-50', text: 'text-yellow-700', label: 'Cho duyet / \uB300\uAE30' },
-  '\uC784\uC6D0\uC2B9\uC778\uB300\uAE30': { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Dang cho / \uC784\uC6D0\uC2B9\uC778\uB300\uAE30' },
-  '\uC2B9\uC778': { bg: 'bg-green-50', text: 'text-green-700', label: 'Da duyet / \uC2B9\uC778' },
-  '\uBC18\uB824': { bg: 'bg-red-50', text: 'text-red-700', label: 'Tu choi / \uBC18\uB824' },
+  '대기': { bg: 'bg-yellow-50', text: 'text-yellow-700', label: 'Cho duyet / 대기' },
+  '임원승인대기': { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Dang cho / 임원승인대기' },
+  '승인': { bg: 'bg-green-50', text: 'text-green-700', label: 'Da duyet / 승인' },
+  '반려': { bg: 'bg-red-50', text: 'text-red-700', label: 'Tu choi / 반려' },
 }
 
 const VAT_OPTIONS = [
-  { value: 10, label: '10% (VAT thong thuong / \uC77C\uBC18)' },
+  { value: 10, label: '10% (VAT thong thuong / 일반)' },
   { value: 8, label: '8%' },
   { value: 5, label: '5%' },
-  { value: 0, label: '0% (Mien thue / \uBE44\uACFC\uC138)' },
-  { value: -1, label: 'Mien thue / \uBA74\uC138' },
-  { value: -2, label: 'Chua nhan / \uBBF8\uC218\uCDE8' },
+  { value: 0, label: '0% (Mien thue / 비과세)' },
+  { value: -1, label: 'Mien thue / 면세' },
+  { value: -2, label: 'Chua nhan / 미수취' },
 ]
 
 function today() {
@@ -61,7 +61,7 @@ export default function ExpensePage() {
 
   // Form state
   const [fDate, setFDate] = useState(today())
-  const [fCat, setFCat] = useState('\uC790\uC7AC')
+  const [fCat, setFCat] = useState('자재')
   const [fDesc, setFDesc] = useState('')
   const [fVendor, setFVendor] = useState('')
   const [fUnit, setFUnit] = useState('')
@@ -116,10 +116,10 @@ export default function ExpensePage() {
     0,
   )
   const pendingApproval = expenses.filter(
-    (e) => e.status === '\uB300\uAE30' || e.status === '\uC784\uC6D0\uC2B9\uC778\uB300\uAE30',
+    (e) => e.status === '대기' || e.status === '임원승인대기',
   ).length
   const approvedTotal = expenses
-    .filter((e) => e.status === '\uC2B9\uC778')
+    .filter((e) => e.status === '승인')
     .reduce((s, e) => s + (e.total_amount || 0), 0)
 
   /* ── Upload ─── */
@@ -143,11 +143,11 @@ export default function ExpensePage() {
   /* ── Submit expense ─── */
   async function handleSubmit() {
     if (!currentProject) {
-      toast('err', 'Chon cong trinh / \uD604\uC7A5\uC744 \uC120\uD0DD\uD558\uC138\uC694')
+      toast('err', 'Chon cong trinh / 현장을 선택하세요')
       return
     }
     if (!fDesc.trim()) {
-      toast('err', 'Nhap noi dung / \uB0B4\uC6A9\uC744 \uC785\uB825\uD558\uC138\uC694')
+      toast('err', 'Nhap noi dung / 내용을 입력하세요')
       return
     }
 
@@ -158,7 +158,7 @@ export default function ExpensePage() {
     const grandTotal = parseFloat(fGrand.replace(/[^0-9]/g, '')) || totalAmt + vatAmt
 
     if (!totalAmt && !unitPrice) {
-      toast('err', 'Nhap so tien / \uAE08\uC561\uC744 \uC785\uB825\uD558\uC138\uC694')
+      toast('err', 'Nhap so tien / 금액을 입력하세요')
       return
     }
 
@@ -196,7 +196,7 @@ export default function ExpensePage() {
       setFGrand('')
       setFNote('')
       setFFile(null)
-      toast('ok', 'Da gui phieu chi / \uC9C0\uCD9C\uACB0\uC758\uC11C \uC81C\uCD9C \uC644\uB8CC')
+      toast('ok', 'Da gui phieu chi / 지출결의서 제출 완료')
     } catch (e) {
       toast('err', e instanceof Error ? e.message : 'Save failed')
     } finally {
@@ -209,7 +209,7 @@ export default function ExpensePage() {
   if (!currentProject) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
-        Vui long chon cong trinh / \uD604\uC7A5\uC744 \uC120\uD0DD\uD574\uC8FC\uC138\uC694.
+        Vui long chon cong trinh / 현장을 선택해주세요.
       </div>
     )
   }
@@ -232,29 +232,29 @@ export default function ExpensePage() {
       {/* Page title */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Chi phi / \uC9C0\uCD9C\uACB0\uC758
+          Chi phi / 지출결의
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Lap phieu chi va phe duyet / \uC9C0\uCD9C\uACB0\uC758\uC11C \uC791\uC131 \uBC0F \uACB0\uC7AC
+          Lap phieu chi va phe duyet / 지출결의서 작성 및 결재
         </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KpiCard
-          title="Thang nay / \uC774\uBC88\uB2EC \uC9C0\uCD9C"
+          title="Thang nay / 이번달 지출"
           value={fmtVND(totalThisMonth)}
-          sub={`${thisMonthExpenses.length} phieu / \uAC74`}
+          sub={`${thisMonthExpenses.length} phieu / 건`}
           color="bg-amber-500"
         />
         <KpiCard
-          title="Cho duyet / \uC9C4\uD589 \uC911"
+          title="Cho duyet / 진행 중"
           value={String(pendingApproval)}
-          sub="phieu / \uAC74"
+          sub="phieu / 건"
           color="bg-blue-500"
         />
         <KpiCard
-          title="Da duyet / \uACB0\uC7AC \uD569\uACC4"
+          title="Da duyet / 결재 합계"
           value={fmtVND(approvedTotal)}
           sub="VND"
           color="bg-green-500"
@@ -265,7 +265,7 @@ export default function ExpensePage() {
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-200">
           <h3 className="text-sm font-semibold text-gray-900">
-            Tao phieu chi / \uC9C0\uCD9C\uACB0\uC758\uC11C \uC791\uC131
+            Tao phieu chi / 지출결의서 작성
           </h3>
         </div>
 
@@ -274,7 +274,7 @@ export default function ExpensePage() {
             {/* Date */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Ngay / \uB0A0\uC9DC
+                Ngay / 날짜
               </label>
               <input
                 type="date"
@@ -287,7 +287,7 @@ export default function ExpensePage() {
             {/* Category */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Phan loai / \uBD84\uB958
+                Phan loai / 분류
               </label>
               <select
                 value={fCat}
@@ -305,13 +305,13 @@ export default function ExpensePage() {
             {/* Description */}
             <div className="sm:col-span-2 lg:col-span-1">
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Noi dung / \uB0B4\uC6A9
+                Noi dung / 내용
               </label>
               <input
                 type="text"
                 value={fDesc}
                 onChange={(e) => setFDesc(e.target.value)}
-                placeholder="Mo ta chi phi / \uC9C0\uCD9C \uB0B4\uC6A9"
+                placeholder="Mo ta chi phi / 지출 내용"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -319,7 +319,7 @@ export default function ExpensePage() {
             {/* Vendor */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Nha cung cap / \uAC70\uB798\uCC98
+                Nha cung cap / 거래처
               </label>
               <input
                 type="text"
@@ -333,7 +333,7 @@ export default function ExpensePage() {
             {/* Unit */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Don vi / \uB2E8\uC704
+                Don vi / 단위
               </label>
               <input
                 type="text"
@@ -347,7 +347,7 @@ export default function ExpensePage() {
             {/* Qty */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                So luong / \uC218\uB7C9
+                So luong / 수량
               </label>
               <input
                 type="number"
@@ -361,7 +361,7 @@ export default function ExpensePage() {
             {/* Unit Price */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Don gia / \uB2E8\uAC00 (VND)
+                Don gia / 단가 (VND)
               </label>
               <input
                 type="text"
@@ -376,14 +376,14 @@ export default function ExpensePage() {
             {/* Total */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Thanh tien / \uD569\uACC4 (VND)
+                Thanh tien / 합계 (VND)
               </label>
               <input
                 type="text"
                 inputMode="numeric"
                 value={fTotal}
                 onChange={(e) => setFTotal(e.target.value)}
-                placeholder="Tu dong / \uC790\uB3D9 \uACC4\uC0B0"
+                placeholder="Tu dong / 자동 계산"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -409,7 +409,7 @@ export default function ExpensePage() {
             {/* VAT Amount */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Tien thue / \uC138\uC561 (VND)
+                Tien thue / 세액 (VND)
               </label>
               <input
                 type="text"
@@ -424,7 +424,7 @@ export default function ExpensePage() {
             {/* Grand Total */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Tong cong / \uCD1D\uC561 (VND)
+                Tong cong / 총액 (VND)
               </label>
               <input
                 type="text"
@@ -439,7 +439,7 @@ export default function ExpensePage() {
             {/* Receipt photo */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Chung tu / \uC99D\uBE59 \uC0AC\uC9C4
+                Chung tu / 증빙 사진
               </label>
               <input
                 type="file"
@@ -452,13 +452,13 @@ export default function ExpensePage() {
             {/* Note */}
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Ghi chu / \uBE44\uACE0
+                Ghi chu / 비고
               </label>
               <input
                 type="text"
                 value={fNote}
                 onChange={(e) => setFNote(e.target.value)}
-                placeholder="Ghi chu them / \uCD94\uAC00 \uBA54\uBAA8"
+                placeholder="Ghi chu them / 추가 메모"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -471,8 +471,8 @@ export default function ExpensePage() {
               className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saving
-                ? 'Dang gui... / \uC81C\uCD9C \uC911...'
-                : 'Gui phe duyet / \uACB0\uC7AC \uC694\uCCAD'}
+                ? 'Dang gui... / 제출 중...'
+                : 'Gui phe duyet / 결재 요청'}
             </button>
           </div>
         </div>
@@ -482,37 +482,37 @@ export default function ExpensePage() {
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900">
-            Lich su chi phi / \uC9C0\uCD9C \uB0B4\uC5ED
+            Lich su chi phi / 지출 내역
           </h3>
           <span className="text-xs text-gray-500">
-            Tong / \uCD1D {expenses.length}\uAC74
+            Tong / 총 {expenses.length}건
           </span>
         </div>
 
         {loading ? (
           <div className="p-8 text-center text-sm text-gray-400">
-            Dang tai... / \uB85C\uB529 \uC911...
+            Dang tai... / 로딩 중...
           </div>
         ) : expenses.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-400">
-            Chua co phieu chi / \uC9C0\uCD9C \uC5C6\uC74C
+            Chua co phieu chi / 지출 없음
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <th className="px-3 py-3">Ngay / \uB0A0\uC9DC</th>
-                  <th className="px-3 py-3">Loai / \uBD84\uB958</th>
-                  <th className="px-3 py-3">Noi dung / \uB0B4\uC6A9</th>
-                  <th className="px-3 py-3">NCC / \uAC70\uB798\uCC98</th>
+                  <th className="px-3 py-3">Ngay / 날짜</th>
+                  <th className="px-3 py-3">Loai / 분류</th>
+                  <th className="px-3 py-3">Noi dung / 내용</th>
+                  <th className="px-3 py-3">NCC / 거래처</th>
                   <th className="px-3 py-3 text-right">SL</th>
-                  <th className="px-3 py-3 text-right">Don gia / \uB2E8\uAC00</th>
-                  <th className="px-3 py-3 text-right">Thanh tien / \uD569\uACC4</th>
-                  <th className="px-3 py-3">Trang thai / \uC0C1\uD0DC</th>
+                  <th className="px-3 py-3 text-right">Don gia / 단가</th>
+                  <th className="px-3 py-3 text-right">Thanh tien / 합계</th>
+                  <th className="px-3 py-3">Trang thai / 상태</th>
                   {canApprove && (
                     <th className="px-3 py-3 text-center">
-                      Thao tac / \uCC98\uB9AC
+                      Thao tac / 처리
                     </th>
                   )}
                 </tr>
@@ -537,11 +537,11 @@ export default function ExpensePage() {
                 ))}
               </tbody>
               {/* Total footer */}
-              {expenses.some((e) => e.status === '\uC2B9\uC778') && (
+              {expenses.some((e) => e.status === '승인') && (
                 <tfoot>
                   <tr className="bg-gray-900 text-white font-bold">
                     <td colSpan={6} className="px-3 py-3 text-xs">
-                      Tong da duyet / \uACB0\uC7AC\uC644\uB8CC \uD569\uACC4
+                      Tong da duyet / 결재완료 합계
                     </td>
                     <td className="px-3 py-3 text-right text-xs font-mono">
                       {fmtVND(approvedTotal)} VND
@@ -596,10 +596,10 @@ function ExpRow({
   onApprove: () => void
   onReject: () => void
 }) {
-  const st = STATUS_MAP[item.status] ?? STATUS_MAP['\uB300\uAE30']
-  const isPending = item.status === '\uB300\uAE30' || item.status === '\uC784\uC6D0\uC2B9\uC778\uB300\uAE30'
-  const isApproved = item.status === '\uC2B9\uC778'
-  const isRejected = item.status === '\uBC18\uB824'
+  const st = STATUS_MAP[item.status] ?? STATUS_MAP['대기']
+  const isPending = item.status === '대기' || item.status === '임원승인대기'
+  const isApproved = item.status === '승인'
+  const isRejected = item.status === '반려'
 
   return (
     <tr className="hover:bg-gray-50">
@@ -661,13 +661,13 @@ function ExpRow({
                 onClick={onApprove}
                 className="px-2.5 py-1 text-xs font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
-                Duyet / \uC2B9\uC778
+                Duyet / 승인
               </button>
               <button
                 onClick={onReject}
                 className="px-2.5 py-1 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
-                Tu choi / \uBC18\uB824
+                Tu choi / 반려
               </button>
             </div>
           ) : (

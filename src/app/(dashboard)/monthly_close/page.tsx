@@ -323,7 +323,7 @@ export default function MonthlyClosePage() {
                           : 'bg-gray-100 text-gray-500'
                       }`}
                     >
-                      {complete ? '\u2713' : '-'}
+                      {complete ? '✓' : '-'}
                     </div>
                     <span className="text-sm font-medium text-gray-800">{item.label}</span>
                   </div>

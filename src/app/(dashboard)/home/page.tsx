@@ -31,11 +31,18 @@ const HR_ACTIONS: QuickAction[] = [
   { label: 'Nhan vien / 직원 등록', href: '/staff', icon: '👤', color: 'bg-violet-50 text-violet-700 border-violet-200' },
 ]
 
+const DRIVER_ACTIONS: QuickAction[] = [
+  { label: 'Vao ca / 출근', href: '/attendance', icon: '✅', color: 'bg-green-50 text-green-700 border-green-200' },
+  { label: 'Xe co / 차량현황', href: '/vehicle', icon: '🚗', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { label: 'Chi phi xe / 차량비용', href: '/driver_advance', icon: '⛽', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { label: 'Tam ung / 전도금', href: '/advance', icon: '💵', color: 'bg-violet-50 text-violet-700 border-violet-200' },
+]
+
 const CEO_ACTIONS: QuickAction[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: '📊', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  { label: 'Da cong truong / 다현장', href: '/multi-site', icon: '🏗️', color: 'bg-green-50 text-green-700 border-green-200' },
-  { label: 'Chi phi / 원가 분석', href: '/cost-analysis', icon: '📈', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  { label: 'Duyet TT / 결재 승인', href: '/advance', icon: '💳', color: 'bg-red-50 text-red-700 border-red-200' },
+  { label: 'Vao ca / 출근', href: '/attendance', icon: '⏰', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { label: 'Dashboard', href: '/dashboard', icon: '📊', color: 'bg-green-50 text-green-700 border-green-200' },
+  { label: 'Da cong truong / 다현장', href: '/multi-site', icon: '🏗️', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { label: 'Chi phi / 원가 분석', href: '/cost-analysis', icon: '📈', color: 'bg-red-50 text-red-700 border-red-200' },
 ]
 
 function getQuickActions(role: Role): QuickAction[] {
@@ -46,6 +53,8 @@ function getQuickActions(role: Role): QuickAction[] {
     case 'hr':
     case 'account':
       return HR_ACTIONS
+    case 'driver':
+      return DRIVER_ACTIONS
     default:
       return ENGINEER_ACTIONS
   }
