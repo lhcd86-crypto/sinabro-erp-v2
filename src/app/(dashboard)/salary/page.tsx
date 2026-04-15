@@ -220,13 +220,13 @@ function SettingsTab() {
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-1">
                       <input
-                        type="number"
+                        type="number" step="10000"
                         value={d.probation_salary}
                         onChange={(e) => updateField(u.id, 'probation_salary', e.target.value)}
                         className="w-24 border border-gray-300 rounded px-2 py-1 text-xs text-right"
                       />
                       <input
-                        type="number"
+                        type="number" step="0.5"
                         value={Math.round(d.probation_rate * 100)}
                         onChange={(e) => updateField(u.id, 'probation_rate', Number(e.target.value) / 100)}
                         className="w-14 border border-gray-300 rounded px-2 py-1 text-xs text-right"
@@ -284,7 +284,7 @@ function NumCell({
   return (
     <td className="px-3 py-2">
       <input
-        type="number"
+        type="number" step="10000"
         value={value}
         onChange={(e) => onChange(uid, field, e.target.value)}
         className={`${w} border border-gray-300 rounded px-2 py-1 text-xs text-right`}
@@ -447,7 +447,7 @@ function MonthlyTab({ userId, projectId }: { userId: string; projectId: string |
                       <td className="px-2 py-2 text-right font-mono text-blue-600">{fmtVND(r.ot_pay)}</td>
                       <td className="px-2 py-2 text-right">
                         <input
-                          type="number"
+                          type="number" step="10000"
                           value={r.other_bonus}
                           onChange={(e) => updateRow(idx, 'other_bonus', Number(e.target.value) || 0)}
                           className="w-20 border border-gray-300 rounded px-1 py-0.5 text-xs text-right print:border-0"
@@ -465,7 +465,7 @@ function MonthlyTab({ userId, projectId }: { userId: string; projectId: string |
                       </td>
                       <td className="px-2 py-2 text-right">
                         <input
-                          type="number"
+                          type="number" step="10000"
                           value={r.tax}
                           onChange={(e) => updateRow(idx, 'tax', Number(e.target.value) || 0)}
                           className="w-20 border border-gray-300 rounded px-1 py-0.5 text-xs text-right print:border-0"
@@ -477,7 +477,7 @@ function MonthlyTab({ userId, projectId }: { userId: string; projectId: string |
                       </td>
                       <td className="px-2 py-2 text-right">
                         <input
-                          type="number"
+                          type="number" step="10000"
                           value={r.other_deduction}
                           onChange={(e) => updateRow(idx, 'other_deduction', Number(e.target.value) || 0)}
                           className="w-20 border border-gray-300 rounded px-1 py-0.5 text-xs text-right print:border-0"
