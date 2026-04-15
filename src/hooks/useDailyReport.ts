@@ -80,10 +80,8 @@ export function useDailyReport() {
       try {
         let query = supabase
           .from('daily_reports')
-          .select(
-            '*, projects(code, name), users:created_by(name)'
-          )
-          .order('date', { ascending: false })
+          .select('*')
+          .order('report_date', { ascending: false })
           .limit(100)
 
         if (projectId) {
@@ -113,11 +111,9 @@ export function useDailyReport() {
       try {
         let query = supabase
           .from('daily_reports')
-          .select(
-            '*, projects(code, name)'
-          )
-          .eq('created_by', user.id)
-          .order('date', { ascending: false })
+          .select('*')
+          .eq('user_id', user.id)
+          .order('report_date', { ascending: false })
           .limit(50)
 
         if (projectId) {
@@ -216,17 +212,35 @@ export function useDailyReport() {
           )
         }
 
-        const row = {
+        const w = data.workers as Record<string, number> ?? {}
+        const m = data.materials as Record<string, number> ?? {}
+        const row: Record<string, unknown> = {
           project_id: data.project_id,
-          date: data.date,
+          report_date: data.date,
           work_type: data.work_type,
           weather: data.weather,
-          workers: data.workers,
-          materials: data.materials,
+          work_desc: data.description,
+          // Workers (개별 컬럼)
+          direct_worker_am: w.wd_am ?? 0,
+          direct_worker_pm: w.wd_pm ?? 0,
+          direct_worker_ni: w.wd_ni ?? 0,
+          indirect_worker_am: w.wi_am ?? 0,
+          indirect_worker_pm: w.wi_pm ?? 0,
+          indirect_worker_ni: w.wi_ni ?? 0,
+          vn_engineer_am: w.vn_am ?? 0,
+          vn_engineer_pm: w.vn_pm ?? 0,
+          vn_engineer_ni: w.vn_ni ?? 0,
+          // Materials (개별 컬럼)
+          qty_v250: m.v250 ?? 0,
+          qty_sv250: m.sv250 ?? 0,
+          qty_hlm: m.hlm ?? 0,
+          qty_m230: m.m230 ?? 0,
+          qty_db2015: m.db2015 ?? 0,
+          qty_other: m.etc ?? 0,
           extra_materials: data.extra_materials,
-          description: data.description,
           photo_urls: photoUrls,
-          created_by: user.id,
+          note: data.description,
+          user_id: user.id,
           confirmed: false,
           revision_requested: false,
         }
