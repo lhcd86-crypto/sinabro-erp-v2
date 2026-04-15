@@ -235,13 +235,13 @@ export default function DashboardPage() {
       // Recent activity: last 10 attendance + leave events
       const { data: recentAtt } = await supabase
         .from('employee_attendance')
-        .select('id, user_id, check_in, work_date, users:user_id(name)')
+        .select('id, user_id, check_in, work_date')
         .order('check_in', { ascending: false })
         .limit(5)
 
       const { data: recentLeave } = await supabase
         .from('leave_requests')
-        .select('id, user_id, leave_type, created_at, status, users:user_id(name)')
+        .select('id, user_id, leave_type, created_at, status')
         .order('created_at', { ascending: false })
         .limit(5)
 

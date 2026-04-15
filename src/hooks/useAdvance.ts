@@ -67,7 +67,7 @@ export function useAdvance() {
     try {
       let query = supabase
         .from('advances')
-        .select('*, users:user_id(name), projects:project_id(code)')
+        .select('*')
         .order('request_date', { ascending: false })
         .limit(200)
 
@@ -89,7 +89,7 @@ export function useAdvance() {
     try {
       let query = supabase
         .from('advance_deposits')
-        .select('*, projects:project_id(code)')
+        .select('*')
         .order('deposit_date', { ascending: false })
         .limit(200)
 

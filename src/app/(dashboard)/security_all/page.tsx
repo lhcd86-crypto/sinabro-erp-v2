@@ -77,7 +77,7 @@ export default function SecurityAllPage() {
     try {
       const { data } = await supabase
         .from('employee_attendance')
-        .select('id, user_id, check_in, latitude, longitude, users:user_id(name)')
+        .select('id, user_id, check_in, latitude, longitude')
         .not('latitude', 'is', null)
         .order('check_in', { ascending: false })
         .limit(50)
@@ -107,7 +107,7 @@ export default function SecurityAllPage() {
     try {
       const { data } = await supabase
         .from('login_photos')
-        .select('id, user_id, photo_url, created_at, users:user_id(name)')
+        .select('id, user_id, photo_url, created_at')
         .order('created_at', { ascending: false })
         .limit(50)
 
@@ -135,7 +135,7 @@ export default function SecurityAllPage() {
     try {
       let query = supabase
         .from('audit_logs')
-        .select('id, user_id, action, details, created_at, users:user_id(name)')
+        .select('id, user_id, action, details, created_at')
         .order('created_at', { ascending: false })
         .limit(100)
 
@@ -174,7 +174,7 @@ export default function SecurityAllPage() {
     try {
       const { data } = await supabase
         .from('approved_devices')
-        .select('*, users:user_id(name)')
+        .select('*')
         .order('approved_at', { ascending: false })
 
       const mapped: DeviceRecord[] = (data ?? []).map((d: Record<string, unknown>) => {

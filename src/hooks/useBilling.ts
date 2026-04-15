@@ -71,7 +71,7 @@ export function useBilling() {
     try {
       let query = supabase
         .from('billings')
-        .select('*, projects:project_id(code)')
+        .select('*')
         .order('billing_date', { ascending: false })
         .limit(300)
 

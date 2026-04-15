@@ -62,7 +62,7 @@ export function useExpense() {
     try {
       let query = supabase
         .from('expenses')
-        .select('*, projects:project_id(code)')
+        .select('*')
         .order('expense_date', { ascending: false })
         .limit(300)
 

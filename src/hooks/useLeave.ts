@@ -202,7 +202,7 @@ export function useLeave() {
     try {
       const { data, error: err } = await supabase
         .from('leave_balances')
-        .select('*, users:user_id(name, role, hire_date)')
+        .select('*')
         .order('user_id')
 
       if (err) throw err

@@ -44,7 +44,7 @@ export default function DeviceMgmtPage() {
     try {
       const { data } = await supabase
         .from('approved_devices')
-        .select('*, users:user_id(name, email)')
+        .select('*')
         .order('approved_at', { ascending: false })
 
       const mapped: ApprovedDevice[] = (data ?? []).map((d: Record<string, unknown>) => {
