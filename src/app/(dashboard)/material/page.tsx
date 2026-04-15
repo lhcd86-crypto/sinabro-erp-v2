@@ -135,28 +135,19 @@ export default function MaterialPage() {
     setSaving(true)
     try {
       const materialItem = inventory.find((i) => i.id === oMaterial)
-      const insertData: Record<string, unknown> = {
-        project_id: currentProject,
-        item_name: materialItem?.name || oMaterial,
-        quantity: qty,
-        unit: oUnit,
-        urgency: oUrgency,
-        expected_date: oExpDate || null,
-        requested_by: user.id,
-        status: 'pending',
-        note: oNote.trim() || null,
-      }
-
-      let { error: err } = await supabase
+      const { error: err } = await supabase
         .from('material_orders')
-        .insert(insertData)
-
-      // Fallback: remove optional columns
-      if (err?.message?.includes('column') || err?.message?.includes('does not exist')) {
-        delete insertData.urgency
-        delete insertData.expected_date
-        ;({ error: err } = await supabase.from('material_orders').insert(insertData))
-      }
+        .insert({
+          project_id: currentProject,
+          item_name: materialItem?.name || oMaterial,
+          quantity: qty,
+          unit: oUnit,
+          urgency: oUrgency,
+          expected_date: oExpDate || null,
+          requested_by: user.id,
+          status: 'pending',
+          reason: oNote.trim() || null,
+        })
 
       if (err) throw err
 
@@ -417,7 +408,7 @@ export default function MaterialPage() {
         <KpiCard
           title="Duoi muc toi thieu / 최소 재고 미달"
           value={String(
-            inventory.filter((i) => i.current_stock < i.min_stock).length,
+            inventory.filter((i) => (i.stock_qty ?? 0) < (i.min_qty ?? 0)).length,
           )}
           sub="loai / 종"
           color="bg-red-500"
@@ -476,7 +467,7 @@ export default function MaterialPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {inventory.map((item) => {
-                      const isLow = item.current_stock < item.min_stock
+                      const isLow = (item.stock_qty ?? 0) < (item.min_qty ?? 0)
                       return (
                         <tr key={item.id} className="hover:bg-gray-50">
                           <td className="px-3 py-3 text-xs font-medium text-gray-900">
@@ -490,13 +481,13 @@ export default function MaterialPage() {
                               isLow ? 'text-red-600' : 'text-gray-900'
                             }`}
                           >
-                            {item.current_stock.toLocaleString('vi-VN')}
+                            {(item.stock_qty ?? 0).toLocaleString('vi-VN')}
                           </td>
                           <td className="px-3 py-3 text-xs text-right font-mono text-gray-500">
-                            {item.min_stock.toLocaleString('vi-VN')}
+                            {(item.min_qty ?? 0).toLocaleString('vi-VN')}
                           </td>
                           <td className="px-3 py-3 text-xs text-gray-600">
-                            {item.location || '-'}
+                            {item.vendor || '-'}
                           </td>
                           <td className="px-3 py-3">
                             {isLow ? (
@@ -665,7 +656,7 @@ export default function MaterialPage() {
                           {tx.transaction_date}
                         </td>
                         <td className="px-3 py-3 text-xs font-medium text-gray-900">
-                          {tx.material_items?.name || '-'}
+                          {tx.material_id || '-'}
                         </td>
                         <td className="px-3 py-3">
                           <span
@@ -681,20 +672,20 @@ export default function MaterialPage() {
                           </span>
                         </td>
                         <td className="px-3 py-3 text-xs text-right font-mono font-bold text-gray-900">
-                          {tx.quantity.toLocaleString('vi-VN')}{' '}
-                          {tx.material_items?.unit || ''}
+                          {(tx.quantity ?? 0).toLocaleString('vi-VN')}{' '}
+                          {''}
                         </td>
                         <td className="px-3 py-3 text-xs text-right font-mono text-gray-600">
                           {tx.unit_price ? fmtVND(tx.unit_price) : '-'}
                         </td>
                         <td className="px-3 py-3 text-xs text-right font-mono font-bold text-gray-900">
-                          {tx.total_amount ? fmtVND(tx.total_amount) : '-'}
+                          {tx.unit_price ? fmtVND(tx.unit_price) : '-'}
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-600">
                           {tx.vendor || '-'}
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-500 max-w-[150px] truncate">
-                          {tx.note || '-'}
+                          {tx.notes || '-'}
                         </td>
                       </tr>
                     ))}
@@ -818,14 +809,14 @@ export default function MaterialPage() {
             </div>
 
             {/* Low stock items */}
-            {inventory.filter((i) => i.current_stock < i.min_stock).length > 0 && (
+            {inventory.filter((i) => (i.stock_qty ?? 0) < (i.min_qty ?? 0)).length > 0 && (
               <div className="p-4 border-b border-gray-100">
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                   <h4 className="text-xs font-semibold text-blue-800 mb-2">
                     Vat tu can dat hang / 발주 필요 자재
                   </h4>
                   {inventory
-                    .filter((i) => i.current_stock < i.min_stock)
+                    .filter((i) => (i.stock_qty ?? 0) < (i.min_qty ?? 0))
                     .map((item) => (
                       <div
                         key={item.id}
@@ -835,7 +826,7 @@ export default function MaterialPage() {
                           {item.name}
                         </span>
                         <span className="text-xs text-red-600 font-mono">
-                          {item.current_stock} / {item.min_stock} {item.unit}
+                          {(item.stock_qty ?? 0)} / {(item.min_qty ?? 0)} {item.unit}
                         </span>
                       </div>
                     ))}

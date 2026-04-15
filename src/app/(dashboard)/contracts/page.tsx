@@ -9,17 +9,16 @@ import { supabase } from '@/lib/supabase'
 
 interface LaborContract {
   id: string
-  project_id: string
-  worker_id: string | null
+  project_id: string | null
   worker_name: string
-  position: string
-  start_date: string
-  end_date: string | null
-  base_salary: number | null
   position: string | null
-  notes: string | null
+  start_date: string | null
+  end_date: string | null
+  daily_rate: number | null
   created_by: string | null
+  created_by_name: string | null
   created_at: string | null
+  signature_url: string | null
 }
 
 interface WorkerOption {
@@ -121,10 +120,10 @@ export default function ContractsPage() {
 
   const openEdit = (c: LaborContract) => {
     setEditing(c)
-    setMWorkerId(c.worker_id ?? ''); setMWorkerName(c.worker_name)
-    setMType(c.position); setMStart(c.start_date); setMEnd(c.end_date ?? '')
-    setMSalary(c.base_salary ? String(c.base_salary) : ''); setMPosition(c.position ?? '')
-    setMNotes(c.notes ?? '')
+    setMWorkerId(''); setMWorkerName(c.worker_name)
+    setMType(c.position ?? ''); setMStart(c.start_date ?? ''); setMEnd(c.end_date ?? '')
+    setMSalary(c.daily_rate ? String(c.daily_rate) : ''); setMPosition(c.position ?? '')
+    setMNotes('')
     setShowModal(true)
   }
 
@@ -143,14 +142,11 @@ export default function ContractsPage() {
     try {
       const payload = {
         project_id: currentProject,
-        worker_id: mWorkerId || null,
         worker_name: mWorkerName.trim(),
-        position: mType,
+        position: mPosition.trim() || null,
         start_date: mStart,
         end_date: mEnd || null,
-        base_salary: parseFloat(mSalary) || null,
-        position: mPosition.trim() || null,
-        notes: mNotes.trim() || null,
+        daily_rate: parseFloat(mSalary) || null,
         created_by: user?.id ?? null,
       }
       if (editing) {
@@ -256,11 +252,11 @@ export default function ContractsPage() {
                 return (
                   <tr key={c.id} className={`hover:bg-gray-50 ${rowHighlight}`}>
                     <td className="px-5 py-2 text-gray-900 font-medium whitespace-nowrap">{c.worker_name}</td>
-                    <td className="px-3 py-2 text-xs whitespace-nowrap">{typeLabel(c.position)}</td>
+                    <td className="px-3 py-2 text-xs whitespace-nowrap">{typeLabel(c.position ?? '')}</td>
                     <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{c.position ?? '-'}</td>
                     <td className="px-3 py-2 text-gray-700 whitespace-nowrap font-mono">{c.start_date}</td>
                     <td className="px-3 py-2 text-gray-700 whitespace-nowrap font-mono">{c.end_date ?? '-'}</td>
-                    <td className="px-3 py-2 text-gray-700 whitespace-nowrap font-mono">{c.base_salary ? fmtVND(c.base_salary) : '-'}</td>
+                    <td className="px-3 py-2 text-gray-700 whitespace-nowrap font-mono">{c.daily_rate ? fmtVND(c.daily_rate) : '-'}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${st.style}`}>{st.label}</span>
                     </td>

@@ -9,22 +9,27 @@ import { supabase } from '@/lib/supabase'
 
 interface AdvanceRequest {
   id: string
-  requester_name: string
+  requester_name: string | null
   amount: number
-  purpose: string
+  detail: string | null
   request_date: string
-  status: 'pending' | 'approved' | 'rejected'
-  created_at: string
+  status: string | null
+  created_at: string | null
+  category: string | null
+  actual_amount: number | null
+  admin_note: string | null
+  project_id: string
+  user_id: string | null
 }
 
 interface AdvanceDeposit {
   id: string
-  project_id: string
+  project_id: string | null
   amount: number
-  deposit_date: string
-  memo: string | null
-  created_by: string
-  created_at: string
+  deposit_date: string | null
+  note: string | null
+  created_by: string | null
+  created_at: string | null
 }
 
 /* ── Helpers ───────────────────────────────────────── */
@@ -115,7 +120,7 @@ export default function ChongmuPage() {
     try {
       const { error } = await supabase
         .from('advances')
-        .update({ status, updated_by: user?.id })
+        .update({ status, approved_by: user?.id, approved_at: new Date().toISOString() })
         .eq('id', id)
       if (error) throw error
       toast('ok', status === 'approved' ? 'Da duyet / 승인 완료' : 'Da tu choi / 반려 완료')
@@ -140,10 +145,10 @@ export default function ChongmuPage() {
     setSaving(true)
     try {
       const { error } = await supabase.from('advance_deposits').insert({
-        project_id: currentProject,
+        project_id: currentProject!,
         amount,
         deposit_date: dDate,
-        memo: dMemo.trim() || null,
+        note: dMemo.trim() || null,
         created_by: user.id,
       })
       if (error) throw error
@@ -357,7 +362,7 @@ export default function ChongmuPage() {
                       {a.requester_name}
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-700 max-w-[250px] truncate">
-                      {a.purpose}
+                      {a.detail}
                     </td>
                     <td className="px-3 py-3 text-xs text-right font-mono font-bold text-gray-900 whitespace-nowrap">
                       {fmtVND(a.amount)}
@@ -417,7 +422,7 @@ export default function ChongmuPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {advances.map((a) => {
-                  const st = STATUS_BADGE[a.status] || STATUS_BADGE.pending
+                  const st = STATUS_BADGE[a.status ?? 'pending'] || STATUS_BADGE.pending
                   return (
                     <tr key={a.id} className="hover:bg-gray-50">
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">
@@ -427,7 +432,7 @@ export default function ChongmuPage() {
                         {a.requester_name}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-700 max-w-[250px] truncate">
-                        {a.purpose}
+                        {a.detail}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono font-bold text-gray-900 whitespace-nowrap">
                         {fmtVND(a.amount)}
@@ -494,7 +499,7 @@ export default function ChongmuPage() {
                       {fmtVND(d.amount)}
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-500">
-                      {d.memo || '-'}
+                      {d.note || '-'}
                     </td>
                   </tr>
                 ))}

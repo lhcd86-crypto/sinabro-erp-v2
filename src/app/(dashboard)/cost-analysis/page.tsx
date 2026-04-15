@@ -29,11 +29,12 @@ interface MonthlyCost {
 
 interface BudgetItem {
   id: string
-  project_id: string
+  project_id: string | null
   category: string
-  budget_amount: number
-  actual_amount: number
-  month: string
+  budget_amount: number | null
+  actual_amount: number | null
+  notes: string | null
+  created_at: string | null
 }
 
 function fmtVND(n: number) {
@@ -102,9 +103,8 @@ export default function CostAnalysisPage() {
         .from('budget_items')
         .select('*')
         .eq('project_id', currentProject)
-        .like('month', `${year}%`)
 
-      setBudgetItems((budgets as BudgetItem[]) ?? [])
+      setBudgetItems((budgets as unknown as BudgetItem[]) ?? [])
     } catch {
       // silent
     } finally {

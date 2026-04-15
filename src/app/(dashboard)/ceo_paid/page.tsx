@@ -8,16 +8,17 @@ import { supabase } from '@/lib/supabase'
 
 interface ExpenseRecord {
   id: string
-  project_id: string
-  expense_date: string
-  vendor: string
-  description: string
-  amount: number
+  project_id: string | null
+  expense_date: string | null
+  vendor: string | null
+  description: string | null
+  total_amount: number | null
   category: string
-  status: string
-  paid_date: string | null
-  paid_by: string | null
-  created_at: string
+  status: string | null
+  approved_at: string | null
+  approved_by: string | null
+  created_at: string | null
+  item_name: string
 }
 
 /* -- Helpers ----------------------------------------------- */
@@ -80,15 +81,15 @@ export default function CeoPaidPage() {
           .order('expense_date', { ascending: false }),
         supabase
           .from('expenses')
-          .select('amount')
+          .select('total_amount')
           .eq('project_id', currentProject)
           .eq('status', 'paid')
-          .gte('paid_date', mStart)
-          .lte('paid_date', mEnd),
+          .gte('approved_at', mStart)
+          .lte('approved_at', mEnd),
       ])
 
       setPending((pendingData as ExpenseRecord[]) ?? [])
-      const paidSum = (paidData ?? []).reduce((s: number, r: { amount: number }) => s + (r.amount || 0), 0)
+      const paidSum = (paidData ?? []).reduce((s: number, r: { total_amount: number | null }) => s + (r.total_amount || 0), 0)
       setPaidThisMonth(paidSum)
     } catch {
       // silent
@@ -108,7 +109,7 @@ export default function CeoPaidPage() {
     try {
       const { error } = await supabase
         .from('expenses')
-        .update({ status: 'paid', paid_date: today(), paid_by: user.id })
+        .update({ status: 'paid', approved_at: today(), approved_by: user.id })
         .eq('id', id)
       if (error) throw error
       toast('ok', 'Da duyet chi / 지급 승인 완료')
@@ -138,7 +139,7 @@ export default function CeoPaidPage() {
   }
 
   /* -- Derived -------------------------------------------- */
-  const pendingTotal = pending.reduce((s, r) => s + (r.amount || 0), 0)
+  const pendingTotal = pending.reduce((s, r) => s + (r.total_amount || 0), 0)
 
   if (!currentProject) {
     return (
@@ -256,7 +257,7 @@ export default function CeoPaidPage() {
                       </span>
                     </td>
                     <td className="px-3 py-3 text-xs text-right font-mono font-semibold text-gray-900">
-                      {formatMoney(row.amount)}
+                      {formatMoney(row.total_amount ?? 0)}
                     </td>
                     <td className="px-3 py-3 text-xs text-center whitespace-nowrap">
                       <button

@@ -48,43 +48,48 @@ export interface DailyReportRow {
   id: string
   project_id: string
   report_date: string
-  date: string // alias for report_date
-  work_type: string
-  weather: string
-  // DB individual columns
-  direct_worker_am: number
-  direct_worker_pm: number
-  direct_worker_ni: number
-  indirect_worker_am: number
-  indirect_worker_pm: number
-  indirect_worker_ni: number
-  vn_engineer_am: number
-  vn_engineer_pm: number
-  vn_engineer_ni: number
-  // Legacy computed fields
-  workers: WorkerCounts
-  materials: MaterialQty
-  extra_materials: ExtraMaterial[]
-  work_desc: string
-  description: string // alias
-  photo_urls: string[]
-  note: string
-  user_id: string
-  created_by: string // alias
-  created_at: string
-  confirmed: boolean
+  date?: string
+  work_type: string | null
+  weather: string | null
+  direct_worker_am: number | null
+  direct_worker_pm: number | null
+  direct_worker_ni: number | null
+  direct_worker: number | null
+  direct_ot: number | null
+  indirect_worker_am: number | null
+  indirect_worker_pm: number | null
+  indirect_worker_ni: number | null
+  indirect_worker: number | null
+  indirect_ot: number | null
+  vn_engineer_am: number | null
+  vn_engineer_pm: number | null
+  vn_engineer_ni: number | null
+  vn_engineer: number | null
+  workers?: WorkerCounts
+  materials?: MaterialQty
+  extra_materials: unknown
+  work_desc: string | null
+  description?: string
+  photo_urls: string[] | null
+  note: string | null
+  location: string | null
+  user_id: string | null
+  created_by?: string
+  created_at: string | null
+  confirmed: boolean | null
   confirmed_at: string | null
   confirmed_by: string | null
-  revision_requested: boolean
+  revision_requested: boolean | null
   revision_comment: string | null
-  qty_v250: number
-  qty_sv250: number
-  qty_hlm: number
-  qty_m230: number
-  qty_db2015: number
-  qty_other: number
-  projects?: { code: string; name: string }
-  users?: { name: string }
+  revision_at: string | null
+  revision_by: string | null
+  revision_by_name: string | null
+  qty_v250: number | null
+  qty_sv250: number | null
+  qty_hlm: number | null
+  qty_m230: number | null
+  qty_db2015: number | null
+  qty_other: number | null
 }
 
 /* ── Hook ── */
@@ -200,12 +205,12 @@ export function useDailyReport() {
           try {
             const { data: rcData } = await supabase
               .from('workforce_photos')
-              .select('worker_ids')
+              .select('checked_worker_ids')
               .eq('project_id', data.project_id)
               .eq('photo_date', data.date)
               .limit(10)
             const photoHeadcount = (rcData ?? []).reduce((sum, rc) => {
-              const ids = rc.worker_ids as string[] | null
+              const ids = rc.checked_worker_ids
               return sum + (ids?.length ?? 0)
             }, 0)
             if (photoHeadcount > 0) {
@@ -234,42 +239,38 @@ export function useDailyReport() {
           )
         }
 
-        const w = data.workers as Record<string, number> ?? {}
-        const m = data.materials as Record<string, number> ?? {}
-        const row: Record<string, unknown> = {
-          project_id: data.project_id,
-          report_date: data.date,
-          work_type: data.work_type,
-          weather: data.weather,
-          work_desc: data.description,
-          // Workers (개별 컬럼)
-          direct_worker_am: w.wd_am ?? 0,
-          direct_worker_pm: w.wd_pm ?? 0,
-          direct_worker_ni: w.wd_ni ?? 0,
-          indirect_worker_am: w.wi_am ?? 0,
-          indirect_worker_pm: w.wi_pm ?? 0,
-          indirect_worker_ni: w.wi_ni ?? 0,
-          vn_engineer_am: w.vn_am ?? 0,
-          vn_engineer_pm: w.vn_pm ?? 0,
-          vn_engineer_ni: w.vn_ni ?? 0,
-          // Materials (개별 컬럼)
-          qty_v250: m.v250 ?? 0,
-          qty_sv250: m.sv250 ?? 0,
-          qty_hlm: m.hlm ?? 0,
-          qty_m230: m.m230 ?? 0,
-          qty_db2015: m.db2015 ?? 0,
-          qty_other: m.etc ?? 0,
-          extra_materials: data.extra_materials,
-          photo_urls: photoUrls,
-          note: data.description,
-          user_id: user.id,
-          confirmed: false,
-          revision_requested: false,
-        }
-
+        const w = data.workers as unknown as Record<string, number> ?? {}
+        const m = data.materials as unknown as Record<string, number> ?? {}
         const { error: err } = await supabase
           .from('daily_reports')
-          .insert(row)
+          .insert({
+            project_id: data.project_id,
+            report_date: data.date,
+            work_type: data.work_type,
+            weather: data.weather,
+            work_desc: data.description,
+            direct_worker_am: w.wd_am ?? 0,
+            direct_worker_pm: w.wd_pm ?? 0,
+            direct_worker_ni: w.wd_ni ?? 0,
+            indirect_worker_am: w.wi_am ?? 0,
+            indirect_worker_pm: w.wi_pm ?? 0,
+            indirect_worker_ni: w.wi_ni ?? 0,
+            vn_engineer_am: w.vn_am ?? 0,
+            vn_engineer_pm: w.vn_pm ?? 0,
+            vn_engineer_ni: w.vn_ni ?? 0,
+            qty_v250: m.v250 ?? 0,
+            qty_sv250: m.sv250 ?? 0,
+            qty_hlm: m.hlm ?? 0,
+            qty_m230: m.m230 ?? 0,
+            qty_db2015: m.db2015 ?? 0,
+            qty_other: m.etc ?? 0,
+            extra_materials: data.extra_materials as unknown as undefined,
+            photo_urls: photoUrls,
+            note: data.description,
+            user_id: user.id,
+            confirmed: false,
+            revision_requested: false,
+          })
 
         if (err) throw err
       } catch (e: unknown) {

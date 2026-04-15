@@ -8,22 +8,28 @@ import { supabase } from '@/lib/supabase'
 
 interface SiteWorker {
   id: string
-  name: string
-  role: string | null
+  worker_name: string
+  worker_type: string
 }
 
 interface WorkforcePhoto {
   id: string
-  project_id: string
+  project_id: string | null
   photo_date: string
   slot: string
-  worker_ids: string[]
-  manual_counts: { direct: number; indirect: number; vn_tech: number }
-  time_records: Record<string, string>
-  photo_urls: string[]
+  checked_worker_ids: string[] | null
+  headcount: number | null
+  photo_url: string | null
+  photo_urls: string[] | null
   memo: string | null
-  created_by: string
-  created_at: string
+  created_by: string | null
+  created_at: string | null
+  time_am_in: string | null
+  time_am_out: string | null
+  time_pm_in: string | null
+  time_pm_out: string | null
+  time_ot_in: string | null
+  time_ot_out: string | null
 }
 
 /* ── Constants ───────────────────────────────────── */
@@ -138,7 +144,7 @@ export default function RollCallPage() {
   async function uploadPhotos(files: File[]): Promise<string[]> {
     const urls: string[] = []
     for (const file of files) {
-      const path = `roll_call/${currentProject}/${fDate}_${Date.now()}_${file.worker_name}`
+      const path = `roll_call/${currentProject}/${fDate}_${Date.now()}_${file.name}`
       const { error } = await supabase.storage
         .from('report-photos')
         .upload(path, file, { upsert: true })
@@ -168,7 +174,7 @@ export default function RollCallPage() {
       const indirect = parseInt(fIndirect) || 0
       const vnTech = parseInt(fVnTech) || 0
 
-      const insertData: Record<string, unknown> = {
+      const { error } = await supabase.from('workforce_photos').insert({
         project_id: currentProject,
         photo_date: fDate,
         slot: fSlot,
@@ -183,21 +189,7 @@ export default function RollCallPage() {
         photo_urls: photoUrls,
         memo: fMemo.trim() || null,
         created_by: user.id,
-      }
-
-      let { error } = await supabase.from('workforce_photos').insert(insertData)
-
-      // Fallback: remove optional columns
-      if (error?.message?.includes('column')) {
-        delete insertData.checked_worker_ids
-        delete insertData.time_am_in
-        delete insertData.time_am_out
-        delete insertData.time_pm_in
-        delete insertData.time_pm_out
-        delete insertData.time_ot_in
-        delete insertData.time_ot_out
-        ;({ error } = await supabase.from('workforce_photos').insert(insertData))
-      }
+      })
       if (error) throw error
 
       setSelectedWorkers(new Set())
@@ -227,7 +219,7 @@ export default function RollCallPage() {
   /* ── Derived ── */
   const todayRecords = records.filter((r) => r.photo_date === today())
   const todayTotal = todayRecords.reduce(
-    (sum, r) => sum + (r.manual_counts?.direct ?? 0) + (r.manual_counts?.indirect ?? 0) + (r.manual_counts?.vn_tech ?? 0),
+    (sum, r) => sum + (r.headcount ?? 0),
     0
   )
   const currentMonth = getMonthKey(today())
@@ -501,7 +493,7 @@ export default function RollCallPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {todayRecords.map((r) => {
-                  const mc = r.manual_counts ?? { direct: 0, indirect: 0, vn_tech: 0 }
+                  const mc = { direct: r.headcount ?? 0, indirect: 0, vn_tech: 0 }
                   return (
                     <tr key={r.id} className="hover:bg-gray-50">
                       <td className="px-3 py-3 text-xs">
@@ -516,7 +508,7 @@ export default function RollCallPage() {
                         {mc.direct + mc.indirect + mc.vn_tech}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-500">
-                        {(r.photo_urls ?? []).length > 0 ? `${r.photo_urls.length} anh` : '-'}
+                        {(r.photo_urls ?? []).length > 0 ? `${(r.photo_urls ?? []).length} anh` : '-'}
                       </td>
                     </tr>
                   )
@@ -560,7 +552,7 @@ export default function RollCallPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {monthRecords.map((r) => {
-                  const mc = r.manual_counts ?? { direct: 0, indirect: 0, vn_tech: 0 }
+                  const mc = { direct: r.headcount ?? 0, indirect: 0, vn_tech: 0 }
                   return (
                     <tr key={r.id} className="hover:bg-gray-50">
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">

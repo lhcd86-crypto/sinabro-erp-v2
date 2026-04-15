@@ -248,7 +248,7 @@ export default function DashboardPage() {
       const acts: ActivityItem[] = []
 
       for (const a of (recentAtt ?? [])) {
-        const uName = (a.users as unknown as { name: string } | null)?.name ?? '—'
+        const uName = a.user_id ?? '—'
         acts.push({
           id: `att-${a.id}`,
           type: 'attendance',
@@ -259,12 +259,12 @@ export default function DashboardPage() {
       }
 
       for (const l of (recentLeave ?? [])) {
-        const uName = (l.users as unknown as { name: string } | null)?.name ?? '—'
+        const uName = l.user_id ?? '—'
         acts.push({
           id: `leave-${l.id}`,
           type: 'leave',
           description: `${uName} xin nghi ${l.leave_type} / 휴가 신청 (${l.status})`,
-          timestamp: l.created_at,
+          timestamp: l.created_at ?? '',
           user_name: uName,
         })
       }

@@ -52,11 +52,11 @@ export default function AccountingPage() {
       const [{ data: billings }, { data: expenses }] = await Promise.all([
         supabase
           .from('billings')
-          .select('paid_amount, billed_amount, payment_date, period')
+          .select('received_amount, claim_amount, received_date, billing_date')
           .eq('project_id', currentProject),
         supabase
           .from('expenses')
-          .select('amount, date')
+          .select('total_amount, expense_date')
           .eq('project_id', currentProject),
       ])
 
@@ -64,10 +64,10 @@ export default function AccountingPage() {
       const expRows = expenses ?? []
 
       // Summary totals
-      const incTotal = billRows.reduce((s, r) => s + (r.paid_amount ?? 0), 0)
-      const expTotal = expRows.reduce((s, r) => s + (r.amount ?? 0), 0)
+      const incTotal = billRows.reduce((s, r) => s + (r.received_amount ?? 0), 0)
+      const expTotal = expRows.reduce((s, r) => s + (r.total_amount ?? 0), 0)
       const billedNotPaid = billRows.reduce(
-        (s, r) => s + ((r.billed_amount ?? 0) - (r.paid_amount ?? 0)),
+        (s, r) => s + ((r.claim_amount ?? 0) - (r.received_amount ?? 0)),
         0,
       )
 
@@ -79,17 +79,17 @@ export default function AccountingPage() {
       const monthMap: Record<string, { income: number; expense: number }> = {}
 
       for (const b of billRows) {
-        const m = (b.payment_date ?? b.period ?? '').slice(0, 7)
+        const m = (b.received_date ?? b.billing_date ?? '').slice(0, 7)
         if (!m) continue
         if (!monthMap[m]) monthMap[m] = { income: 0, expense: 0 }
-        monthMap[m].income += b.paid_amount ?? 0
+        monthMap[m].income += b.received_amount ?? 0
       }
 
       for (const e of expRows) {
-        const m = (e.date ?? '').slice(0, 7)
+        const m = (e.expense_date ?? '').slice(0, 7)
         if (!m) continue
         if (!monthMap[m]) monthMap[m] = { income: 0, expense: 0 }
-        monthMap[m].expense += e.amount ?? 0
+        monthMap[m].expense += e.total_amount ?? 0
       }
 
       const months = Object.keys(monthMap).sort()

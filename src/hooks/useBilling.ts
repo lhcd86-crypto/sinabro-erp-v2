@@ -9,18 +9,15 @@ export interface BillingRecord {
   project_id: string
   billing_date: string
   billing_no: string | null
-  claim_amount: number
-  received_amount: number
-  amount: number // alias
-  contract_item: string | null
-  status: string
-  prepayment_deduction: number | null
-  net_amount: number | null
+  claim_amount: number | null
+  received_amount: number | null
+  received_date: string | null
+  expected_payment_date: string | null
+  period_from: string | null
+  period_to: string | null
+  status: string | null
   note: string | null
-  submitted_by: string
-  created_at: string
-  projects?: { code: string } | null
-  users?: { name: string } | null
+  created_at: string | null
 }
 
 export interface PrepaymentRecord {
@@ -102,34 +99,13 @@ export function useBilling() {
       if (!user || !currentProject)
         throw new Error('No user or project selected')
 
-      const deduction = rec.prepayment_deduction || 0
-      const netAmount = rec.amount - deduction
-
-      const insertData: Record<string, unknown> = {
+      const { error: err } = await supabase.from('billings').insert({
         project_id: currentProject,
         billing_date: rec.billing_date,
-        note: rec.description,
+        note: rec.note || rec.description || null,
         claim_amount: rec.amount,
-        contract_item: rec.contract_item || null,
-        prepayment_deduction: deduction,
-        net_amount: netAmount,
-        note: rec.note || null,
-        submitted_by: user.id,
         status: 'draft',
-      }
-
-      let { error: err } = await supabase.from('billings').insert(insertData)
-
-      // Fallback: remove optional columns
-      if (
-        err?.message?.includes('column') ||
-        err?.message?.includes('does not exist')
-      ) {
-        delete insertData.contract_item
-        delete insertData.prepayment_deduction
-        delete insertData.net_amount
-        ;({ error: err } = await supabase.from('billings').insert(insertData))
-      }
+      })
 
       if (err) throw new Error(err.message)
 

@@ -148,7 +148,7 @@ export function useAttendance() {
 
       const recMap = new Map<string, AttendanceRecord>()
       for (const r of (records ?? [])) {
-        recMap.set(r.user_id, r as AttendanceRecord)
+        if (r.user_id) recMap.set(r.user_id, r as AttendanceRecord)
       }
 
       const statuses: WorkerStatus[] = (users ?? []).map((u: { id: string; name: string; role: string }) => ({
@@ -254,22 +254,16 @@ export function useAttendance() {
         throw new Error('Dang trong ca lam viec. Hay tan ca truoc / 현재 근무 중입니다. 먼저 퇴근하세요')
       }
 
-      const insertData: Record<string, unknown> = {
-        user_id: user.id,
-        project_id: currentProject,
-        work_date: today,
-        check_in: new Date().toISOString(),
-        memo: memo || null,
-      }
-
-      if (gps) {
-        insertData.checkin_lat = gps.lat
-        insertData.checkin_lng = gps.lng
-      }
-
       const { error: insErr } = await supabase
         .from('employee_attendance')
-        .insert(insertData)
+        .insert({
+          user_id: user.id,
+          project_id: currentProject,
+          work_date: today,
+          check_in: new Date().toISOString(),
+          memo: memo || null,
+          ...(gps ? { checkin_lat: gps.lat, checkin_lng: gps.lng } : {}),
+        })
 
       if (insErr) {
         // Fallback: try without GPS columns
@@ -313,54 +307,53 @@ export function useAttendance() {
         .eq('id', attId)
         .single()
 
-      const updateData: Record<string, unknown> = {
-        check_out: checkoutTime,
-      }
+      let workHours: number | undefined
+      let overtimeHours: number | undefined
+      let isNight: boolean | undefined
+      let isWeekend: boolean | undefined
 
-      if (memo) updateData.checkout_memo = memo
-      if (gps) {
-        updateData.checkout_lat = gps.lat
-        updateData.checkout_lng = gps.lng
-      }
-
-      // Auto-calculate work hours and overtime
       if (attRec?.check_in) {
         const diffMs = new Date(checkoutTime).getTime() - new Date(attRec.check_in).getTime()
         const hours = Math.round((diffMs / 3600000) * 10) / 10
 
         if (hours > 0 && hours <= 48) {
-          updateData.work_hours = hours
+          workHours = hours
         }
-
-        updateData.overtime_hours = Math.max(0, Math.round((hours - 8) * 10) / 10)
+        overtimeHours = Math.max(0, Math.round((hours - 8) * 10) / 10)
 
         const ciHour = new Date(attRec.check_in).getHours()
-        updateData.is_night = ciHour >= 22 || ciHour < 6
+        isNight = ciHour >= 22 || ciHour < 6
 
         if (attRec.work_date) {
           const dow = new Date(attRec.work_date).getDay()
-          updateData.is_weekend = dow === 0 || dow === 6
+          isWeekend = dow === 0 || dow === 6
         }
       }
 
-      let { error: updErr } = await supabase
+      const { error: updErr } = await supabase
         .from('employee_attendance')
-        .update(updateData)
+        .update({
+          check_out: checkoutTime,
+          ...(memo ? { checkout_memo: memo } : {}),
+          ...(gps ? { checkout_lat: gps.lat, checkout_lng: gps.lng } : {}),
+          ...(workHours !== undefined ? { work_hours: workHours } : {}),
+          ...(overtimeHours !== undefined ? { overtime_hours: overtimeHours } : {}),
+          ...(isNight !== undefined ? { is_night: isNight } : {}),
+          ...(isWeekend !== undefined ? { is_weekend: isWeekend } : {}),
+        })
         .eq('id', attId)
 
-      // Fallback: try without optional columns
       if (updErr) {
-        const fb1: Record<string, unknown> = { check_out: checkoutTime }
-        if (updateData.work_hours) fb1.work_hours = updateData.work_hours
-        if (updateData.overtime_hours !== undefined) fb1.overtime_hours = updateData.overtime_hours
-
         const res = await supabase
           .from('employee_attendance')
-          .update(fb1)
+          .update({
+            check_out: checkoutTime,
+            ...(workHours !== undefined ? { work_hours: workHours } : {}),
+            ...(overtimeHours !== undefined ? { overtime_hours: overtimeHours } : {}),
+          })
           .eq('id', attId)
-        updErr = res.error
 
-        if (updErr) {
+        if (res.error) {
           // Final fallback: check_out only
           const res2 = await supabase
             .from('employee_attendance')

@@ -99,7 +99,7 @@ export function useExpense() {
         throw new Error('No user or project selected')
 
       const now = new Date().toISOString()
-      const insertData: Record<string, unknown> = {
+      const { error: err } = await supabase.from('expenses').insert({
         expense_date: rec.expense_date,
         category: rec.category,
         project_id: currentProject,
@@ -117,7 +117,7 @@ export function useExpense() {
         doc_url: rec.doc_url ?? null,
         submitted_by: user.id,
         submitted_role: user.role,
-        status: '대기', // 대기
+        status: '대기',
         current_step: 'submitted',
         approval_chain: {
           submitted: {
@@ -127,51 +127,7 @@ export function useExpense() {
             at: now,
           },
         },
-      }
-
-      let { error: err } = await supabase.from('expenses').insert(insertData)
-
-      // Fallback: approval columns
-      if (
-        err?.message?.includes('approval_chain') ||
-        err?.message?.includes('current_step') ||
-        err?.message?.includes('submitted_role')
-      ) {
-        delete insertData.approval_chain
-        delete insertData.current_step
-        delete insertData.submitted_role
-        ;({ error: err } = await supabase.from('expenses').insert(insertData))
-      }
-
-      // Fallback: VAT columns
-      if (
-        err?.message?.includes('vat_rate') ||
-        err?.message?.includes('vat_amount') ||
-        err?.message?.includes('grand_total')
-      ) {
-        delete insertData.vat_rate
-        delete insertData.vat_amount
-        delete insertData.grand_total
-        ;({ error: err } = await supabase.from('expenses').insert(insertData))
-      }
-
-      // Fallback: minimal fields
-      if (
-        err?.message?.includes('column') ||
-        err?.message?.includes('does not exist')
-      ) {
-        const minData = {
-          expense_date: rec.expense_date,
-          category: rec.category,
-          project_id: currentProject,
-          description: rec.description,
-          vendor: rec.vendor,
-          total_amount: rec.total_amount,
-          submitted_by: user.id,
-          status: '대기',
-        }
-        ;({ error: err } = await supabase.from('expenses').insert(minData))
-      }
+      })
 
       if (err) throw new Error(err.message)
 

@@ -77,22 +77,19 @@ export default function SecurityAllPage() {
     try {
       const { data } = await supabase
         .from('employee_attendance')
-        .select('id, user_id, check_in, latitude, longitude')
-        .not('latitude', 'is', null)
+        .select('id, user_id, check_in, checkin_lat, checkin_lng')
+        .not('checkin_lat', 'is', null)
         .order('check_in', { ascending: false })
         .limit(50)
 
-      const mapped: AttendanceGPS[] = (data ?? []).map((r: Record<string, unknown>) => {
-        const u = r.users as { name?: string } | null
-        return {
-          id: r.id as string,
-          user_id: r.user_id as string,
-          check_in: r.check_in as string,
-          latitude: r.latitude as number | null,
-          longitude: r.longitude as number | null,
-          user_name: u?.name ?? '-',
-        }
-      })
+      const mapped: AttendanceGPS[] = (data ?? []).map((r) => ({
+        id: r.id,
+        user_id: r.user_id ?? '-',
+        check_in: r.check_in ?? '-',
+        latitude: r.checkin_lat,
+        longitude: r.checkin_lng,
+        user_name: r.user_id ?? '-',
+      }))
       setGpsRecords(mapped)
     } catch {
       // silent
@@ -135,7 +132,7 @@ export default function SecurityAllPage() {
     try {
       let query = supabase
         .from('audit_logs')
-        .select('id, user_id, action, details, created_at')
+        .select('id, changed_by, changed_by_name, action, changes, created_at')
         .order('created_at', { ascending: false })
         .limit(100)
 
@@ -144,17 +141,14 @@ export default function SecurityAllPage() {
 
       const { data } = await query
 
-      let mapped: AuditLog[] = (data ?? []).map((r: Record<string, unknown>) => {
-        const u = r.users as { name?: string } | null
-        return {
-          id: r.id as string,
-          user_id: r.user_id as string,
-          action: r.action as string,
-          details: r.details as string | null,
-          created_at: r.created_at as string,
-          user_name: u?.name ?? '-',
-        }
-      })
+      let mapped: AuditLog[] = (data ?? []).map((r) => ({
+        id: r.id,
+        user_id: r.changed_by ?? '-',
+        action: r.action ?? '-',
+        details: r.changes ? JSON.stringify(r.changes) : null,
+        created_at: r.created_at ?? '-',
+        user_name: r.changed_by_name ?? '-',
+      }))
 
       if (auditUserFilter.trim()) {
         const kw = auditUserFilter.trim().toLowerCase()

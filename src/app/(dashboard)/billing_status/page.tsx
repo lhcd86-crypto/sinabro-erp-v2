@@ -9,16 +9,17 @@ import { supabase } from '@/lib/supabase'
 interface BillingRow {
   id: string
   project_id: string
-  round: number | null
-  period: string | null
-  billed_amount: number
-  approved_amount: number | null
-  prepay_deduction: number | null
-  paid_amount: number
-  status: string
-  payment_date: string | null
+  billing_no: string | null
+  billing_date: string
+  period_from: string | null
+  period_to: string | null
+  claim_amount: number | null
+  received_amount: number | null
+  received_date: string | null
+  expected_payment_date: string | null
+  status: string | null
   note: string | null
-  created_at: string
+  created_at: string | null
 }
 
 type BillingStatus = 'draft' | 'submitted' | 'approved' | 'paid'
@@ -70,7 +71,7 @@ export default function BillingStatusPage() {
           .from('billings')
           .select('*')
           .eq('project_id', currentProject)
-          .order('round', { ascending: true }),
+          .order('billing_date', { ascending: true }),
         supabase
           .from('projects')
           .select('contract_amount')
@@ -92,8 +93,8 @@ export default function BillingStatusPage() {
   }, [user, currentProject, loadData])
 
   /* -- Computed ------------------------------------------- */
-  const totalBilled = billings.reduce((s, r) => s + (r.billed_amount ?? 0), 0)
-  const totalPaid = billings.reduce((s, r) => s + (r.paid_amount ?? 0), 0)
+  const totalBilled = billings.reduce((s, r) => s + (r.claim_amount ?? 0), 0)
+  const totalPaid = billings.reduce((s, r) => s + (r.received_amount ?? 0), 0)
   const remaining = contractAmount - totalBilled
   const billedPct = contractAmount > 0 ? Math.round((totalBilled / contractAmount) * 100) : 0
 
@@ -235,25 +236,25 @@ export default function BillingStatusPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {billings.map((row) => {
-                  const deduction = row.prepay_deduction ?? 0
-                  const net = row.billed_amount - deduction
-                  const badge = statusBadge(row.status)
+                  const claimAmt = row.claim_amount ?? 0
+                  const receivedAmt = row.received_amount ?? 0
+                  const badge = statusBadge(row.status ?? '')
                   return (
                     <tr key={row.id} className="hover:bg-gray-50">
                       <td className="px-3 py-3 text-xs text-gray-900 font-semibold">
-                        {row.round ?? '-'}
+                        {row.billing_no ?? '-'}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-700 font-mono whitespace-nowrap">
-                        {row.period ?? '-'}
+                        {row.period_from ?? '-'}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-700 text-right font-mono">
-                        {fmtVND(row.billed_amount)}
+                        {fmtVND(claimAmt)}
                       </td>
                       <td className="px-3 py-3 text-xs text-red-600 text-right font-mono">
-                        {deduction > 0 ? `-${fmtVND(deduction)}` : '-'}
+                        -
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-900 text-right font-mono font-semibold">
-                        {fmtVND(net)}
+                        {fmtVND(receivedAmt)}
                       </td>
                       <td className="px-3 py-3 text-xs">
                         <span className={`inline-block px-2 py-0.5 rounded font-semibold ${badge.bg} ${badge.text}`}>
@@ -261,7 +262,7 @@ export default function BillingStatusPage() {
                         </span>
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">
-                        {row.payment_date ?? '-'}
+                        {row.received_date ?? '-'}
                       </td>
                     </tr>
                   )
@@ -276,10 +277,10 @@ export default function BillingStatusPage() {
                     {fmtVND(totalBilled)}
                   </td>
                   <td className="px-3 py-3 text-xs text-red-600 text-right font-mono">
-                    {fmtVND(billings.reduce((s, r) => s + (r.prepay_deduction ?? 0), 0))}
+                    -
                   </td>
                   <td className="px-3 py-3 text-xs text-gray-900 text-right font-mono">
-                    {fmtVND(totalBilled - billings.reduce((s, r) => s + (r.prepay_deduction ?? 0), 0))}
+                    {fmtVND(totalPaid)}
                   </td>
                   <td colSpan={2} />
                 </tr>

@@ -8,30 +8,28 @@ export interface MaterialItem {
   id: string
   project_id: string | null
   name: string
-  unit: string
-  current_stock: number
-  min_stock: number
-  location: string | null
-  status: string
-  note: string | null
-  created_at: string
+  unit: string | null
+  stock_qty: number | null
+  min_qty: number | null
+  unit_price: number | null
+  vendor: string | null
+  notes: string | null
+  created_by: string | null
+  created_at: string | null
 }
 
 export interface MaterialTransaction {
   id: string
-  item_id: string
+  material_id: string | null
   project_id: string | null
-  transaction_type: 'in' | 'out'
-  quantity: number
-  transaction_date: string
+  transaction_type: string | null
+  quantity: number | null
+  transaction_date: string | null
   vendor: string | null
   unit_price: number | null
-  total_amount: number | null
-  note: string | null
-  performed_by: string
-  created_at: string
-  material_items?: { name: string; unit: string } | null
-  users?: { name: string } | null
+  notes: string | null
+  created_by: string | null
+  created_at: string | null
 }
 
 export const MATERIAL_UNITS = [
@@ -90,7 +88,7 @@ export function useMaterial() {
     try {
       let query = supabase
         .from('material_transactions')
-        .select('*, material_items:item_id(name, unit)')
+        .select('*')
         .order('transaction_date', { ascending: false })
         .limit(300)
 
@@ -121,35 +119,19 @@ export function useMaterial() {
       if (!user || !currentProject)
         throw new Error('No user or project selected')
 
-      const insertData: Record<string, unknown> = {
-        item_id: rec.item_id,
-        project_id: currentProject,
-        transaction_type: rec.transaction_type,
-        quantity: rec.quantity,
-        transaction_date: rec.transaction_date,
-        vendor: rec.vendor || null,
-        unit_price: rec.unit_price || null,
-        total_amount: rec.total_amount || null,
-        note: rec.note || null,
-        performed_by: user.id,
-      }
-
-      let { error: err } = await supabase
+      const { error: err } = await supabase
         .from('material_transactions')
-        .insert(insertData)
-
-      // Fallback: remove optional columns
-      if (
-        err?.message?.includes('column') ||
-        err?.message?.includes('does not exist')
-      ) {
-        delete insertData.vendor
-        delete insertData.unit_price
-        delete insertData.total_amount
-        ;({ error: err } = await supabase
-          .from('material_transactions')
-          .insert(insertData))
-      }
+        .insert({
+          material_id: rec.item_id,
+          project_id: currentProject,
+          transaction_type: rec.transaction_type,
+          quantity: rec.quantity,
+          transaction_date: rec.transaction_date,
+          vendor: rec.vendor || null,
+          unit_price: rec.unit_price || null,
+          notes: rec.note || null,
+          created_by: user.id,
+        })
 
       if (err) throw new Error(err.message)
 
@@ -158,11 +140,11 @@ export function useMaterial() {
       if (item) {
         const delta =
           rec.transaction_type === 'in' ? rec.quantity : -rec.quantity
-        const newStock = Math.max(0, item.current_stock + delta)
+        const newStock = Math.max(0, (item.stock_qty ?? 0) + delta)
 
         await supabase
           .from('material_items')
-          .update({ current_stock: newStock })
+          .update({ stock_qty: newStock })
           .eq('id', rec.item_id)
       }
 
@@ -183,30 +165,16 @@ export function useMaterial() {
     }) => {
       if (!user) throw new Error('No user')
 
-      const insertData: Record<string, unknown> = {
-        name: rec.name,
-        unit: rec.unit,
-        current_stock: rec.current_stock,
-        min_stock: rec.min_stock,
-        location: rec.location || null,
-        project_id: currentProject,
-        status: 'active',
-      }
-
-      let { error: err } = await supabase
+      const { error: err } = await supabase
         .from('material_items')
-        .insert(insertData)
-
-      if (
-        err?.message?.includes('column') ||
-        err?.message?.includes('does not exist')
-      ) {
-        delete insertData.location
-        delete insertData.status
-        ;({ error: err } = await supabase
-          .from('material_items')
-          .insert(insertData))
-      }
+        .insert({
+          name: rec.name,
+          unit: rec.unit,
+          stock_qty: rec.current_stock,
+          min_qty: rec.min_stock,
+          project_id: currentProject,
+          created_by: user.id,
+        })
 
       if (err) throw new Error(err.message)
       await loadInventory()

@@ -166,13 +166,13 @@ export default function LeaveMgmtPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900">
-                      {rec.users?.name ?? '—'}
+                      {rec.user_id ?? '—'}
                       <span className="ml-2 text-xs text-gray-500">
-                        {rec.users?.role ? ROLE_LABELS[rec.users.role as keyof typeof ROLE_LABELS] : ''}
+                        {''}
                       </span>
                     </p>
                     <p className="text-xs text-gray-600 mt-1">
-                      {rec.leave_type} | {rec.start_date} ~ {rec.end_date} ({rec.days} ngay/일)
+                      {rec.leave_type} | {rec.start_date} ~ {rec.end_date} ({rec.leave_days} ngay/일)
                     </p>
                     <p className="text-xs text-gray-500 mt-1">{rec.reason}</p>
                   </div>
@@ -229,17 +229,17 @@ export default function LeaveMgmtPage() {
               )}
               {allBalances.map((bal) => (
                 <tr key={bal.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-2 text-gray-900 whitespace-nowrap">{bal.users?.name ?? '—'}</td>
+                  <td className="px-5 py-2 text-gray-900 whitespace-nowrap">{bal.user_id ?? '—'}</td>
                   <td className="px-3 py-2 text-gray-700 whitespace-nowrap text-xs">
-                    {bal.users?.role ? ROLE_LABELS[bal.users.role as keyof typeof ROLE_LABELS] : '-'}
+                    {'-'}
                   </td>
-                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap text-xs">{bal.users?.hire_date ?? '-'}</td>
+                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap text-xs">{'-'}</td>
                   <td className="px-3 py-2 text-gray-700 whitespace-nowrap text-xs">
-                    {bal.users?.hire_date ? calcTenure(bal.users.hire_date) : '-'}
+                    {'-'}
                   </td>
-                  <td className="px-3 py-2 text-gray-900 font-medium whitespace-nowrap">{bal.total}</td>
-                  <td className="px-3 py-2 text-orange-600 whitespace-nowrap">{bal.used}</td>
-                  <td className="px-3 py-2 text-green-600 font-medium whitespace-nowrap">{bal.remaining}</td>
+                  <td className="px-3 py-2 text-gray-900 font-medium whitespace-nowrap">{bal.total_days ?? 0}</td>
+                  <td className="px-3 py-2 text-orange-600 whitespace-nowrap">{bal.used_days ?? 0}</td>
+                  <td className="px-3 py-2 text-green-600 font-medium whitespace-nowrap">{(bal.total_days ?? 0) - (bal.used_days ?? 0)}</td>
                   <td className="px-5 py-2 whitespace-nowrap">
                     <div className="flex items-center gap-1">
                       <input
@@ -247,7 +247,7 @@ export default function LeaveMgmtPage() {
                         min={0}
                         value={adjustMap[bal.id] ?? ''}
                         onChange={(e) => setAdjustMap((prev) => ({ ...prev, [bal.id]: e.target.value }))}
-                        placeholder={String(bal.total)}
+                        placeholder={String(bal.total_days ?? 0)}
                         className="w-16 px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                       <button
@@ -319,17 +319,17 @@ export default function LeaveMgmtPage() {
                 </tr>
               )}
               {allLeaves.map((rec) => {
-                const st = STATUS_STYLE[rec.status] ?? STATUS_STYLE.pending
+                const st = STATUS_STYLE[rec.status ?? 'pending'] ?? STATUS_STYLE.pending
                 return (
                   <tr key={rec.id} className="hover:bg-gray-50">
-                    <td className="px-5 py-2 text-gray-900 whitespace-nowrap">{rec.users?.name ?? '—'}</td>
+                    <td className="px-5 py-2 text-gray-900 whitespace-nowrap">{rec.user_id ?? '—'}</td>
                     <td className="px-3 py-2 text-gray-700 whitespace-nowrap text-xs">
-                      {rec.users?.role ? ROLE_LABELS[rec.users.role as keyof typeof ROLE_LABELS] : '-'}
+                      {'-'}
                     </td>
                     <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{rec.leave_type}</td>
                     <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{rec.start_date}</td>
                     <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{rec.end_date}</td>
-                    <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{rec.days}</td>
+                    <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{rec.leave_days}</td>
                     <td className="px-3 py-2 text-gray-600 text-xs max-w-[150px] truncate">{rec.reason ?? '-'}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${st.bg} ${st.text}`}>
@@ -337,7 +337,7 @@ export default function LeaveMgmtPage() {
                       </span>
                     </td>
                     <td className="px-5 py-2 text-gray-600 text-xs whitespace-nowrap">
-                      {rec.approver?.name ?? '-'}
+                      {rec.approved_by ?? '-'}
                     </td>
                   </tr>
                 )

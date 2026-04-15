@@ -51,11 +51,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const user: User = {
       id: profile.id,
-      email: profile.email,
+      email: profile.email ?? '',
       name: profile.name,
       role: profile.role as Role,
-      hire_date: profile.hire_date,
-      probation_end_date: profile.probation_end_date,
+      hire_date: profile.hire_date ?? '',
+      probation_end_date: profile.probation_end_date ?? null,
     }
 
     set({
@@ -122,11 +122,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const user: User = {
       id: profile.id,
-      email: profile.email,
+      email: profile.email ?? '',
       name: profile.name,
       role: profile.role as Role,
-      hire_date: profile.hire_date,
-      probation_end_date: profile.probation_end_date,
+      hire_date: profile.hire_date ?? '',
+      probation_end_date: profile.probation_end_date ?? null,
     }
 
     set({

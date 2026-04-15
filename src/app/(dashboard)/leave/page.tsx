@@ -78,9 +78,9 @@ export default function LeavePage() {
     }
   }
 
-  const totalDays = balance?.total ?? 12
-  const usedDays = balance?.used ?? 0
-  const remainDays = balance?.remaining ?? 12
+  const totalDays = balance?.total_days ?? 12
+  const usedDays = balance?.used_days ?? 0
+  const remainDays = totalDays - usedDays
 
   return (
     <div className="space-y-6">
@@ -232,7 +232,7 @@ export default function LeavePage() {
                 </tr>
               )}
               {history.map((rec) => {
-                const st = STATUS_STYLE[rec.status] ?? STATUS_STYLE.pending
+                const st = STATUS_STYLE[rec.status ?? 'pending'] ?? STATUS_STYLE.pending
                 return (
                   <tr key={rec.id} className="hover:bg-gray-50">
                     <td className="px-5 py-2 text-gray-900 whitespace-nowrap">{rec.leave_type}</td>
@@ -252,7 +252,7 @@ export default function LeavePage() {
                       </span>
                     </td>
                     <td className="px-5 py-2 text-gray-600 text-xs whitespace-nowrap">
-                      {rec.approver?.name ?? '-'}
+                      {rec.approved_by ?? '-'}
                     </td>
                   </tr>
                 )

@@ -139,7 +139,7 @@ export default function VehiclePage() {
     if (!currentProject) return
     setSaving(true)
     try {
-      const payload: Record<string, unknown> = {
+      const payload = {
         plate_no: mPlate.trim(),
         vehicle_type: mType,
         assigned_driver_id: mDriverId || null,

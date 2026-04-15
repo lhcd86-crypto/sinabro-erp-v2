@@ -100,7 +100,7 @@ export default function MultiSitePage() {
           id: p.id,
           code: p.code,
           name: p.name,
-          status: p.status,
+          status: p.status ?? 'active',
           contract_amount: p.contract_amount,
           end_date: p.end_date,
           workerCount: wc ?? 0,

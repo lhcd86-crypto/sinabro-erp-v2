@@ -8,26 +8,35 @@ export interface EquipmentRecord {
   id: string
   project_id: string | null
   name: string
-  code: string
   product_code: string | null
-  category: string
-  status: string
+  category: string | null
+  status: string | null
   note: string | null
   photo_url: string | null
   current_project_id: string | null
-  created_at: string
-  projects?: { code: string; name: string } | null
+  current_location: string | null
+  manufacturer: string | null
+  purchase_date: string | null
+  qty: number | null
+  registered_by: string | null
+  registered_by_name: string | null
+  last_moved_at: string | null
+  created_at: string | null
 }
 
 export interface RepairRecord {
   id: string
-  equipment_id: string
+  equipment_id: string | null
+  equipment_name: string | null
   repair_date: string
-  description: string
+  repair_type: string | null
+  detail: string | null
   cost: number | null
-  performed_by: string | null
-  status: string
-  created_at: string
+  vendor: string | null
+  result: string | null
+  registered_by: string | null
+  created_at: string | null
+  completed_date: string | null
 }
 
 export interface TransferRecord {
@@ -104,7 +113,7 @@ export function useEquipment() {
     }) => {
       if (!user) throw new Error('No user')
 
-      const insertData: Record<string, unknown> = {
+      const { error: err } = await supabase.from('equipment_items').insert({
         name: rec.name,
         product_code: rec.code || null,
         category: rec.category,
@@ -113,17 +122,7 @@ export function useEquipment() {
         note: rec.note || null,
         registered_by: user.id,
         registered_by_name: user.name || null,
-      }
-
-      let { error: err } = await supabase.from('equipment_items').insert(insertData)
-
-      // Fallback: remove optional columns
-      if (err?.message?.includes('column')) {
-        delete insertData.registered_by
-        delete insertData.registered_by_name
-        delete insertData.product_code
-        ;({ error: err } = await supabase.from('equipment_items').insert(insertData))
-      }
+      })
 
       if (err) throw new Error(err.message)
       await loadEquipment()
@@ -156,18 +155,17 @@ export function useEquipment() {
       const item = equipment.find((e) => e.id === equipmentId)
 
       // Insert transfer record
-      const transferData: Record<string, unknown> = {
-        equipment_id: equipmentId,
-        from_project_id: item?.project_id || currentProject,
-        to_project_id: toProjectId,
-        transfer_date: new Date().toISOString().slice(0, 10),
-        transferred_by: user.id,
-        note: note || null,
-      }
-
       const { error: tErr } = await supabase
         .from('equipment_transfers')
-        .insert(transferData)
+        .insert({
+          equipment_id: equipmentId,
+          equipment_name: item?.name || null,
+          from_location: item?.project_id || currentProject,
+          to_location: toProjectId,
+          transfer_date: new Date().toISOString().slice(0, 10),
+          transferred_by: user.id,
+          note: note || null,
+        })
 
       if (tErr) console.warn('Transfer log skipped:', tErr.message)
 
@@ -219,7 +217,15 @@ export function useEquipment() {
 
       const { error: err } = await supabase
         .from('equipment_repairs')
-        .insert(rec)
+        .insert({
+          equipment_id: rec.equipment_id,
+          repair_date: rec.repair_date,
+          detail: rec.description,
+          cost: rec.cost,
+          vendor: rec.performed_by,
+          result: rec.status,
+          registered_by: user.id,
+        })
 
       if (err) throw new Error(err.message)
 

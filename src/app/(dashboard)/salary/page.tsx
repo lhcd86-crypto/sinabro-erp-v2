@@ -226,7 +226,7 @@ function SettingsTab() {
                         className="w-24 border border-gray-300 rounded px-2 py-1 text-xs text-right"
                       />
                       <input
-                        type="number" step="0.5"
+                        type="number"
                         value={Math.round(d.probation_rate * 100)}
                         onChange={(e) => updateField(u.id, 'probation_rate', Number(e.target.value) / 100)}
                         className="w-14 border border-gray-300 rounded px-2 py-1 text-xs text-right"
@@ -284,12 +284,12 @@ function NumCell({
   return (
     <td className="px-3 py-2">
       <input
-        type="number" step="10000"
+        type="number"
         value={value}
         onChange={(e) => onChange(uid, field, e.target.value)}
         className={`${w} border border-gray-300 rounded px-2 py-1 text-xs text-right`}
         min="0"
-        step={step}
+        step={step ?? "10000"}
       />
     </td>
   )

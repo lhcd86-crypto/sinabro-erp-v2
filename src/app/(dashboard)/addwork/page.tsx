@@ -11,18 +11,21 @@ interface AdditionalWork {
   id: string
   project_id: string
   work_date: string
-  category: string
-  work_type: string
+  category: string | null
+  work_type: string | null
   description: string | null
   location: string | null
   quantity: number | null
   unit: string | null
   unit_price: number | null
-  notes: string | null
-  photos: string[]
-  status: string
-  user_id: string
-  created_at: string
+  note: string | null
+  photos: string[] | null
+  status: string | null
+  user_id: string | null
+  created_at: string | null
+  total_amount: number | null
+  approved_at: string | null
+  approved_by: string | null
 }
 
 /* ── Constants ───────────────────────────────────── */

@@ -62,7 +62,7 @@ export default function CostAnalysisPage() {
       // Load billings (revenue)
       const { data: billings, error: bErr } = await supabase
         .from('billings')
-        .select('amount, billing_date, status')
+        .select('claim_amount, billing_date, status')
         .eq('project_id', currentProject)
         .gte('billing_date', dateFrom)
         .lte('billing_date', dateTo)
@@ -79,7 +79,7 @@ export default function CostAnalysisPage() {
       if (eErr) throw eErr
 
       // Calculate totals
-      const revTotal = (billings || []).reduce((s, b) => s + (b.amount || 0), 0)
+      const revTotal = (billings || []).reduce((s, b) => s + (b.claim_amount || 0), 0)
       const expTotal = (expenses || []).reduce((s, e) => s + (e.total_amount || 0), 0)
       setTotalRevenue(revTotal)
       setTotalExpenses(expTotal)
@@ -91,7 +91,7 @@ export default function CostAnalysisPage() {
         const month = b.billing_date?.slice(0, 7)
         if (!month) continue
         if (!monthMap[month]) monthMap[month] = { revenue: 0, expenses: 0 }
-        monthMap[month].revenue += b.amount || 0
+        monthMap[month].revenue += b.claim_amount || 0
       }
 
       for (const e of expenses || []) {

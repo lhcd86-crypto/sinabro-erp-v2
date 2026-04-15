@@ -71,7 +71,7 @@ export default function AnnouncementsPage() {
         .select('announcement_id')
         .eq('user_id', user.id)
 
-      setReadIds(new Set((reads ?? []).map((r: { announcement_id: string }) => r.announcement_id)))
+      setReadIds(new Set((reads ?? []).map((r: { announcement_id: string | null }) => r.announcement_id ?? '')))
     } catch {
       // silent
     } finally {
@@ -121,7 +121,6 @@ export default function AnnouncementsPage() {
       const { error } = await supabase.from('announcements').insert({
         title: fTitle.trim(),
         content: fContent.trim(),
-        project_id: currentProject ?? null,
         created_by: user.id,
       })
       if (error) throw error

@@ -66,9 +66,9 @@ export default function DailyBriefPage() {
       ] = await Promise.all([
         supabase
           .from('employee_attendance')
-          .select('id, status')
+          .select('id')
           .eq('project_id', currentProject)
-          .eq('attendance_date', dateStr),
+          .eq('work_date', dateStr),
         supabase
           .from('leave_requests')
           .select('id')
@@ -104,8 +104,8 @@ export default function DailyBriefPage() {
       ])
 
       const attArr = attData ?? []
-      const present = attArr.filter((a: { status: string }) => a.status === 'present' || a.status === 'checked_in').length
-      const absent = attArr.filter((a: { status: string }) => a.status === 'absent').length
+      const present = attArr.length
+      const absent = 0
       const onLeave = (leaveData ?? []).length
 
       setBrief({

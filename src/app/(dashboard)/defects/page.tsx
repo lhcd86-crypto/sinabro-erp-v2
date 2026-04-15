@@ -9,17 +9,17 @@ import { supabase } from '@/lib/supabase'
 
 interface DefectRecord {
   id: string
-  project_id: string
-  location: string
-  description: string
-  photos: string[]
-  priority: 'low' | 'medium' | 'high'
-  status: 'reported' | 'in-progress' | 'completed'
+  project_id: string | null
+  title: string
+  location: string | null
+  description: string | null
+  photo_urls: string[] | null
+  severity: string | null
+  status: string | null
   assigned_to: string | null
-  repair_notes: string | null
-  reported_by: string
-  reported_at: string
-  completed_at: string | null
+  created_by: string | null
+  created_at: string | null
+  resolved_at: string | null
 }
 
 /* ── Constants ───────────────────────────────────── */
@@ -77,7 +77,7 @@ export default function DefectsPage() {
         .from('defects')
         .select('*')
         .eq('project_id', currentProject)
-        .order('reported_at', { ascending: false })
+        .order('created_at', { ascending: false })
       setDefects((data as DefectRecord[]) ?? [])
     } catch {
       // silent
@@ -125,15 +125,15 @@ export default function DefectsPage() {
       }
 
       const { error } = await supabase.from('defects').insert({
-        project_id: currentProject,
+        project_id: currentProject!,
+        title: fLocation.trim() || 'Defect',
         location: fLocation.trim(),
         description: fDesc.trim(),
-        photos: photoUrls,
-        priority: fPriority,
+        photo_urls: photoUrls,
+        severity: fPriority,
         status: 'reported',
         assigned_to: fAssignee.trim() || null,
-        reported_by: user.id,
-        reported_at: new Date().toISOString(),
+        created_by: user.id,
       })
       if (error) throw error
 
@@ -155,9 +155,8 @@ export default function DefectsPage() {
   /* ── Update status ── */
   async function updateStatus(id: string, status: string, repairNotes?: string) {
     try {
-      const update: Record<string, unknown> = { status }
-      if (status === 'completed') update.completed_at = new Date().toISOString()
-      if (repairNotes) update.repair_notes = repairNotes
+      const update: { status: string; resolved_at?: string } = { status }
+      if (status === 'completed') update.resolved_at = new Date().toISOString()
 
       const { error } = await supabase.from('defects').update(update).eq('id', id)
       if (error) throw error
@@ -378,8 +377,8 @@ export default function DefectsPage() {
         ) : (
           <div className="divide-y divide-gray-100">
             {filtered.map((defect) => {
-              const st = STATUS_MAP[defect.status] ?? STATUS_MAP.reported
-              const pr = PRIORITY_MAP[defect.priority] ?? PRIORITY_MAP.medium
+              const st = STATUS_MAP[defect.status ?? 'reported'] ?? STATUS_MAP.reported
+              const pr = PRIORITY_MAP[defect.severity ?? 'medium'] ?? PRIORITY_MAP.medium
               const isExpanded = expandedId === defect.id
 
               return (
@@ -401,7 +400,7 @@ export default function DefectsPage() {
                       <p className="text-xs text-gray-500 truncate">{defect.description}</p>
                     </div>
                     <div className="text-xs text-gray-400 font-mono whitespace-nowrap">
-                      {defect.reported_at?.slice(0, 10)}
+                      {defect.created_at?.slice(0, 10)}
                     </div>
                     <svg
                       className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -425,26 +424,20 @@ export default function DefectsPage() {
                         </div>
                         <div>
                           <span className="text-gray-500">Ngay bao cao / 접수일:</span>
-                          <p className="font-medium text-gray-900">{defect.reported_at?.slice(0, 10)}</p>
+                          <p className="font-medium text-gray-900">{defect.created_at?.slice(0, 10)}</p>
                         </div>
                         <div>
                           <span className="text-gray-500">Hoan thanh / 완료일:</span>
-                          <p className="font-medium text-gray-900">{defect.completed_at?.slice(0, 10) ?? '-'}</p>
+                          <p className="font-medium text-gray-900">{defect.resolved_at?.slice(0, 10) ?? '-'}</p>
                         </div>
                       </div>
                       <div className="text-xs">
                         <span className="text-gray-500">Mo ta / 내용:</span>
                         <p className="mt-1 text-gray-700">{defect.description}</p>
                       </div>
-                      {defect.repair_notes && (
-                        <div className="text-xs">
-                          <span className="text-gray-500">Ghi chu sua chua / 보수 내용:</span>
-                          <p className="mt-1 text-gray-700">{defect.repair_notes}</p>
-                        </div>
-                      )}
-                      {(defect.photos ?? []).length > 0 && (
+                      {(defect.photo_urls ?? []).length > 0 && (
                         <div className="flex gap-2 flex-wrap">
-                          {defect.photos.map((url, i) => (
+                          {(defect.photo_urls ?? []).map((url, i) => (
                             <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                               <img src={url} alt={`defect-${i}`} className="w-20 h-20 object-cover rounded-lg border" />
                             </a>

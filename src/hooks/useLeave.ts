@@ -6,26 +6,29 @@ import { useAuthStore } from '@/stores/authStore'
 
 export interface LeaveBalance {
   id: string
-  user_id: string
-  total: number
-  used: number
-  remaining: number
+  user_id: string | null
+  total_days: number | null
+  used_days: number | null
+  updated_at: string | null
 }
 
 export interface LeaveRecord {
   id: string
-  user_id: string
+  user_id: string | null
   leave_type: string
   start_date: string
   end_date: string
-  half_day: 'full' | 'am' | 'pm'
-  days: number
+  half_day: string | null
+  leave_days: number | null
   reason: string | null
-  status: 'pending' | 'approved' | 'rejected'
+  status: string | null
   approved_by: string | null
-  created_at: string
-  users?: { name: string; role: string; hire_date: string } | null
-  approver?: { name: string } | null
+  approved_at: string | null
+  created_at: string | null
+  reject_reason: string | null
+  cancelled_at: string | null
+  cancelled_by: string | null
+  project_id: string | null
 }
 
 export type LeaveType = '연차' | '병가' | '경조사' | '무급' | '공가'
@@ -83,17 +86,15 @@ export function useLeave() {
       if (err && err.code !== 'PGRST116') throw err
 
       if (data) {
-        const total = data.total_days ?? data.total ?? 12
-        const used = data.used_days ?? data.used ?? 0
         setBalance({
           id: data.id,
           user_id: data.user_id,
-          total,
-          used,
-          remaining: total - used,
+          total_days: data.total_days ?? 12,
+          used_days: data.used_days ?? 0,
+          updated_at: data.updated_at,
         })
       } else {
-        setBalance({ id: '', user_id: user.id, total: 12, used: 0, remaining: 12 })
+        setBalance({ id: '', user_id: user.id, total_days: 12, used_days: 0, updated_at: null })
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Load failed'
@@ -221,12 +222,12 @@ export function useLeave() {
 
     const { error: err } = await supabase
       .from('leave_requests')
-      .update({ status: 'approved', approved_by: user.id })
+      .update({ status: '승인', approved_by: user.id, approved_at: new Date().toISOString() })
       .eq('id', leaveId)
 
     if (err) throw err
 
-    // Update leave balance: increase used, decrease remaining
+    // Update leave balance: increase used
     const { data: req } = await supabase
       .from('leave_requests')
       .select('user_id, leave_days')
@@ -237,7 +238,7 @@ export function useLeave() {
       const { data: bal } = await supabase
         .from('leave_balances')
         .select('*')
-        .eq('user_id', req.user_id)
+        .eq('user_id', req.user_id!)
         .single()
 
       if (bal) {
@@ -256,7 +257,7 @@ export function useLeave() {
 
     const { error: err } = await supabase
       .from('leave_requests')
-      .update({ status: 'rejected', approved_by: user.id })
+      .update({ status: '반려', approved_by: user.id })
       .eq('id', leaveId)
 
     if (err) throw err

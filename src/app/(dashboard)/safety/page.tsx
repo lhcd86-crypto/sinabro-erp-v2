@@ -9,26 +9,25 @@ import { supabase } from '@/lib/supabase'
 
 interface InspectionRecord {
   id: string
-  project_id: string
-  inspection_date: string
-  inspection_type: string
-  inspector: string
-  checklist: Record<string, boolean>
-  photos: string[]
+  project_id: string | null
+  inspection_date: string | null
+  inspector_id: string | null
+  checklist: unknown
+  photo_urls: string[] | null
   notes: string | null
-  created_by: string
-  created_at: string
+  unchecked_items: string[] | null
+  created_at: string | null
 }
 
 interface TBMRecord {
   id: string
-  project_id: string
+  project_id: string | null
   tbm_date: string
-  topic: string
-  participants: number
-  notes: string | null
-  created_by: string
-  created_at: string
+  work_description: string | null
+  attendee_count: number | null
+  safety_measures: string | null
+  created_by: string | null
+  created_at: string | null
 }
 
 /* ── Constants ───────────────────────────────────── */
@@ -160,12 +159,10 @@ export default function SafetyPage() {
       const { error } = await supabase.from('safety_inspections').insert({
         project_id: currentProject,
         inspection_date: fDate,
-        inspection_type: fType,
-        inspector: fInspector.trim(),
+        inspector_id: user.id,
         checklist: fChecklist,
-        photos: photoUrls,
+        photo_urls: photoUrls,
         notes: fNotes.trim() || null,
-        created_by: user.id,
       })
       if (error) throw error
 
@@ -198,9 +195,9 @@ export default function SafetyPage() {
       const { error } = await supabase.from('tbm_records').insert({
         project_id: currentProject,
         tbm_date: tDate,
-        topic: tTopic.trim(),
-        participants: parseInt(tParticipants) || 0,
-        notes: tNotes.trim() || null,
+        work_description: tTopic.trim(),
+        attendee_count: parseInt(tParticipants) || 0,
+        safety_measures: tNotes.trim() || null,
         created_by: user.id,
       })
       if (error) throw error
@@ -479,10 +476,10 @@ export default function SafetyPage() {
                           </td>
                           <td className="px-3 py-3 text-xs">
                             <span className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-semibold">
-                              {INSPECTION_TYPES.find((t) => t.value === ins.inspection_type)?.label ?? ins.inspection_type}
+                              {ins.inspection_date ?? '-'}
                             </span>
                           </td>
-                          <td className="px-3 py-3 text-xs text-gray-700">{ins.inspector}</td>
+                          <td className="px-3 py-3 text-xs text-gray-700">{ins.inspector_id ?? '-'}</td>
                           <td className="px-3 py-3 text-xs">
                             <span
                               className={`inline-block px-2 py-0.5 rounded font-semibold ${
@@ -495,7 +492,7 @@ export default function SafetyPage() {
                             </span>
                           </td>
                           <td className="px-3 py-3 text-xs text-gray-500">
-                            {(ins.photos ?? []).length > 0 ? `${ins.photos.length} anh` : '-'}
+                            {(ins.photo_urls ?? []).length > 0 ? `${(ins.photo_urls ?? []).length} anh` : '-'}
                           </td>
                           <td className="px-3 py-3 text-xs text-gray-500 max-w-[200px] truncate">
                             {ins.notes ?? '-'}
@@ -616,13 +613,13 @@ export default function SafetyPage() {
                           {tbm.tbm_date}
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-700 font-medium">
-                          {tbm.topic}
+                          {tbm.work_description ?? '-'}
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-600 text-right font-mono">
-                          {tbm.participants}
+                          {tbm.attendee_count ?? 0}
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-500 max-w-[200px] truncate">
-                          {tbm.notes ?? '-'}
+                          {tbm.safety_measures ?? '-'}
                         </td>
                       </tr>
                     ))}

@@ -8,18 +8,22 @@ import { supabase } from '@/lib/supabase'
 
 interface SiteEvent {
   id: string
-  project_id: string
+  project_id: string | null
   title: string
-  category: string
-  priority: string
+  category: string | null
+  priority: string | null
   start_date: string
-  end_date: string
-  progress: number
-  assignee_id: string | null
+  end_date: string | null
+  progress: number | null
+  assignee: string | null
   location: string | null
   memo: string | null
-  created_by: string
-  created_at: string
+  created_by: string | null
+  created_at: string | null
+  status: string | null
+  attendees: string[] | null
+  repeat_type: string | null
+  updated_at: string | null
 }
 
 /* ── Constants ───────────────────────────────────── */
@@ -173,7 +177,7 @@ export default function SiteCalendarPage() {
         start_date: fStartDate,
         end_date: fEndDate,
         progress: parseInt(fProgress) || 0,
-        assignee_id: fAssignee.trim() || null,
+        assignee: fAssignee.trim() || null,
         location: fLocation.trim() || null,
         memo: fMemo.trim() || null,
         created_by: user.id,
@@ -219,7 +223,7 @@ export default function SiteCalendarPage() {
 
   function eventsForDay(day: number) {
     const dateStr = `${monthStr}-${String(day).padStart(2, '0')}`
-    return filteredEvents.filter((e) => e.start_date <= dateStr && e.end_date >= dateStr)
+    return filteredEvents.filter((e) => e.start_date <= dateStr && (e.end_date ?? e.start_date) >= dateStr)
   }
 
   const todayStr = today()
@@ -387,7 +391,7 @@ export default function SiteCalendarPage() {
                 const dayOfWeek = d.getDay()
                 d.setDate(d.getDate() - dayOfWeek + i)
                 const dateStr = d.toISOString().slice(0, 10)
-                const dayEvts = filteredEvents.filter((e) => e.start_date <= dateStr && e.end_date >= dateStr)
+                const dayEvts = filteredEvents.filter((e) => e.start_date <= dateStr && (e.end_date ?? e.start_date) >= dateStr)
                 const isToday = dateStr === todayStr
                 return (
                   <div key={i} className={`flex gap-3 p-2 rounded-lg ${isToday ? 'bg-blue-50' : ''}`}>

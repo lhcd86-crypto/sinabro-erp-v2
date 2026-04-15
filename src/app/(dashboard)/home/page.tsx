@@ -156,7 +156,7 @@ export default function DashboardPage() {
           .from('daily_reports')
           .select('id', { count: 'exact', head: true })
           .eq('project_id', currentProject)
-          .eq('date', today),
+          .eq('report_date', today),
         // Today's safety checks
         supabase
           .from('safety_inspections')

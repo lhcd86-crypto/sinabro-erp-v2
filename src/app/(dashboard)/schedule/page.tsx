@@ -9,15 +9,16 @@ import { supabase } from '@/lib/supabase'
 
 interface ScheduleItem {
   id: string
-  project_id: string
-  task_name: string
-  start_date: string
-  end_date: string
-  progress: number
+  project_id: string | null
+  title: string
+  start_date: string | null
+  end_date: string | null
+  progress: number | null
   assignee: string | null
   notes: string | null
-  created_by: string
-  created_at: string
+  status: string | null
+  created_by: string | null
+  created_at: string | null
 }
 
 function today() {
@@ -102,12 +103,12 @@ export default function SchedulePage() {
       try {
         const { data: qData } = await supabase
           .from('quantity_items')
-          .select('item_code, contract_qty')
+          .select('item_name, contract_qty')
           .eq('project_id', currentProject)
 
         const qMap: Record<string, number> = {}
-        ;(qData ?? []).forEach((q: { item_code: string; contract_qty: number }) => {
-          qMap[q.item_code] = q.contract_qty ?? 0
+        ;(qData ?? []).forEach((q: { item_name: string; contract_qty: number | null }) => {
+          qMap[q.item_name] = q.contract_qty ?? 0
         })
         contractQty = qMap
       } catch {
@@ -140,8 +141,8 @@ export default function SchedulePage() {
         const overallPct = Math.min(100, Math.round((totalActual / totalContract) * 100))
         // Update all schedule items proportionally
         for (const item of items) {
-          const newProgress = Math.min(100, Math.round(overallPct * (item.progress > 0 ? 1 : 0.5)))
-          if (newProgress !== item.progress) {
+          const newProgress = Math.min(100, Math.round(overallPct * ((item.progress ?? 0) > 0 ? 1 : 0.5)))
+          if (newProgress !== (item.progress ?? 0)) {
             await supabase
               .from('schedule_items')
               .update({ progress: newProgress })
@@ -175,9 +176,9 @@ export default function SchedulePage() {
   /* ── Edit item ── */
   function startEdit(item: ScheduleItem) {
     setEditId(item.id)
-    setFTask(item.task_name)
-    setFStart(item.start_date)
-    setFEnd(item.end_date)
+    setFTask(item.title)
+    setFStart(item.start_date ?? '')
+    setFEnd(item.end_date ?? '')
     setFProgress(String(item.progress))
     setFAssignee(item.assignee ?? '')
     setFNotes(item.notes ?? '')
@@ -199,7 +200,7 @@ export default function SchedulePage() {
     try {
       const payload = {
         project_id: currentProject,
-        task_name: fTask.trim(),
+        title: fTask.trim(),
         start_date: fStart,
         end_date: fEnd,
         progress: parseInt(fProgress) || 0,
@@ -231,7 +232,7 @@ export default function SchedulePage() {
   }
 
   /* ── Gantt helpers ── */
-  const allDates = items.flatMap((i) => [i.start_date, i.end_date])
+  const allDates = items.flatMap((i) => [i.start_date, i.end_date]).filter((d): d is string => d != null)
   const minDate = allDates.length > 0 ? allDates.sort()[0] : today()
   const maxDate = allDates.length > 0 ? allDates.sort().reverse()[0] : today()
   const minTime = new Date(minDate).getTime()
@@ -262,7 +263,7 @@ export default function SchedulePage() {
   }
 
   const overallProgress = items.length > 0
-    ? Math.round(items.reduce((s, i) => s + i.progress, 0) / items.length)
+    ? Math.round(items.reduce((s, i) => s + (i.progress ?? 0), 0) / items.length)
     : 0
 
   return (
@@ -324,7 +325,7 @@ export default function SchedulePage() {
         <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow">
           <p className="text-xs font-medium text-gray-500">Hoan thanh / 완료</p>
           <p className="mt-2 text-2xl font-bold text-gray-900">
-            {items.filter((i) => i.progress >= 100).length}/{items.length}
+            {items.filter((i) => (i.progress ?? 0) >= 100).length}/{items.length}
           </p>
         </div>
       </div>
@@ -440,22 +441,22 @@ export default function SchedulePage() {
           </div>
           <div className="p-4 space-y-2">
             {items.map((item) => {
-              const style = getBarStyle(item.start_date, item.end_date)
+              const style = getBarStyle(item.start_date ?? today(), item.end_date ?? today())
               return (
                 <div key={item.id} className="flex items-center gap-3">
                   <div className="w-32 sm:w-48 shrink-0 text-xs text-gray-700 font-medium truncate">
-                    {item.task_name}
+                    {item.title}
                   </div>
                   <div className="flex-1 relative h-6 bg-gray-100 rounded overflow-hidden">
                     <div
-                      className={`absolute top-0 h-full rounded ${progressColor(item.progress)} opacity-80`}
+                      className={`absolute top-0 h-full rounded ${progressColor(item.progress ?? 0)} opacity-80`}
                       style={style}
                     />
                     <div
                       className="absolute top-0 h-full bg-black/20 rounded"
                       style={{
                         left: style.left,
-                        width: `calc(${style.width} * ${item.progress / 100})`,
+                        width: `calc(${style.width} * ${(item.progress ?? 0) / 100})`,
                       }}
                     />
                   </div>
@@ -505,7 +506,7 @@ export default function SchedulePage() {
                 {items.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-3 py-3 text-xs text-gray-700 font-medium">
-                      {item.task_name}
+                      {item.title}
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">
                       {item.start_date}
@@ -517,7 +518,7 @@ export default function SchedulePage() {
                       <div className="flex items-center justify-end gap-2">
                         <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${progressColor(item.progress)}`}
+                            className={`h-full rounded-full ${progressColor(item.progress ?? 0)}`}
                             style={{ width: `${item.progress}%` }}
                           />
                         </div>

@@ -9,17 +9,14 @@ import { supabase } from '@/lib/supabase'
 
 interface SubcontractPayment {
   id: string
-  project_id: string
-  vendor_id: string
-  work_type: string
-  amount: number
-  amount: number
-  paid_date: string
+  project_id: string | null
+  vendor_id: string | null
+  amount: number | null
+  paid_date: string | null
+  due_date: string | null
+  billing_id: string | null
   status: string | null
-  notes: string | null
-  status: 'pending' | 'partial' | 'completed'
-  created_by: string
-  created_at: string
+  created_at: string | null
 }
 
 /* ── Helpers ───────────────────────────────────────── */
@@ -120,14 +117,9 @@ export default function SubcontractPage() {
       const { error } = await supabase.from('subcontract_payments').insert({
         project_id: currentProject,
         vendor_id: fName.trim(),
-        work_type: fWorkType.trim(),
-        amount: contractAmt,
         amount: paidAmt,
         paid_date: fDate,
-        status: fInvoice.trim() || null,
-        notes: fNotes.trim() || null,
         status: fStatus,
-        created_by: user.id,
       })
       if (error) throw error
 
@@ -397,8 +389,8 @@ export default function SubcontractPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {payments.map((p) => {
-                  const st = STATUS_BADGE[p.status] || STATUS_BADGE.pending
-                  const remaining = p.amount - p.amount
+                  const st = STATUS_BADGE[p.status ?? 'pending'] || STATUS_BADGE.pending
+                  const remaining = 0
                   return (
                     <tr key={p.id} className="hover:bg-gray-50">
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">
@@ -408,13 +400,13 @@ export default function SubcontractPage() {
                         {p.vendor_id}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-700">
-                        {p.work_type}
+                        {p.vendor_id ?? '-'}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono font-bold text-gray-900 whitespace-nowrap">
-                        {fmtVND(p.amount)}
+                        {fmtVND(p.amount ?? 0)}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono font-bold text-green-700 whitespace-nowrap">
-                        {fmtVND(p.amount)}
+                        {fmtVND(p.amount ?? 0)}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono font-bold text-amber-700 whitespace-nowrap">
                         {fmtVND(remaining)}

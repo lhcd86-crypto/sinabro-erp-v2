@@ -108,8 +108,8 @@ export default function AttendancePage() {
 
       // Build attendance map
       const attMap = new Map<string, { work_hours: number | null }>()
-      ;(attData ?? []).forEach((rec: { work_date: string; work_hours: number | null }) => {
-        attMap.set(rec.work_date, rec)
+      ;(attData ?? []).forEach((rec: { work_date: string | null; work_hours: number | null }) => {
+        if (rec.work_date) attMap.set(rec.work_date, rec)
       })
 
       // Fill calendar

@@ -8,17 +8,19 @@ import { supabase } from '@/lib/supabase'
 
 interface WorkOrder {
   id: string
-  project_id: string
-  location: string
-  work_type: string
-  quantity: string | null
+  project_id: string | null
+  location: string | null
+  work_type: string | null
+  qty: string | null
   assignee_id: string | null
-  due_date: string | null
+  assignee_name: string | null
   content: string | null
   caution: string | null
-  status: string
-  created_by: string
-  created_at: string
+  status: string | null
+  created_by: string | null
+  created_by_name: string | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 interface UserOption {
@@ -121,9 +123,8 @@ export default function WorkOrdersPage() {
         project_id: currentProject,
         location: fLocation.trim(),
         work_type: fWorkType,
-        quantity: fQuantity.trim() || null,
+        qty: fQuantity.trim() || null,
         assignee_id: fAssignee || null,
-        due_date: fDueDate || null,
         content: fContent.trim() || null,
         caution: fCaution.trim() || null,
         status: 'pending',
@@ -387,8 +388,8 @@ export default function WorkOrdersPage() {
                           {WORK_TYPES.find((t) => t.value === ord.work_type)?.label ?? ord.work_type}
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-xs text-gray-600 font-mono">{ord.quantity ?? '-'}</td>
-                      <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">{ord.due_date ?? '-'}</td>
+                      <td className="px-3 py-3 text-xs text-gray-600 font-mono">{ord.qty ?? '-'}</td>
+                      <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">{ord.created_at?.slice(0, 10) ?? '-'}</td>
                       <td className="px-3 py-3 text-xs text-gray-500 max-w-[200px] truncate">{ord.content ?? '-'}</td>
                       <td className="px-3 py-3 text-xs">
                         <span className={`inline-block px-2 py-0.5 rounded font-semibold ${statusInfo?.color ?? 'bg-gray-100 text-gray-700'}`}>

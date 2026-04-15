@@ -9,14 +9,15 @@ import { supabase } from '@/lib/supabase'
 
 interface Contact {
   id: string
-  project_id: string
+  project_id: string | null
   name: string
-  position: string | null
+  role: string | null
   phone: string | null
   email: string | null
   organization: string | null
-  contact_type: string
-  notes: string | null
+  contact_type: string | null
+  created_at: string | null
+  created_by: string | null
 }
 
 const CONTACT_TYPES = [
@@ -93,9 +94,9 @@ export default function ContactsPage() {
 
   const openEdit = (c: Contact) => {
     setEditing(c)
-    setMName(c.name); setMPosition(c.position ?? ''); setMPhone(c.phone ?? '')
+    setMName(c.name); setMPosition(c.role ?? ''); setMPhone(c.phone ?? '')
     setMEmail(c.email ?? ''); setMOrg(c.organization ?? '')
-    setMType(c.contact_type); setMNotes(c.notes ?? '')
+    setMType(c.contact_type ?? ''); setMNotes('')
     setShowModal(true)
   }
 
@@ -108,12 +109,11 @@ export default function ContactsPage() {
       const payload = {
         project_id: currentProject,
         name: mName.trim(),
-        position: mPosition.trim() || null,
+        role: mPosition.trim() || null,
         phone: mPhone.trim() || null,
         email: mEmail.trim() || null,
         organization: mOrg.trim() || null,
         contact_type: mType,
-        notes: mNotes.trim() || null,
       }
       if (editing) {
         const { error } = await supabase.from('contacts').update(payload).eq('id', editing.id)
@@ -202,7 +202,7 @@ export default function ContactsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-900">{c.name}</span>
-                    {c.position && <span className="text-xs text-gray-500">({c.position})</span>}
+                    {c.role && <span className="text-xs text-gray-500">({c.role})</span>}
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     {c.organization && <span className="text-xs text-gray-500">{c.organization}</span>}

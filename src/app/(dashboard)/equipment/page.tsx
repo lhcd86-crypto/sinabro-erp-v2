@@ -106,8 +106,11 @@ export default function EquipmentPage() {
       const total = rows.length
 
       for (const row of rows) {
-        const insertData: Record<string, unknown> = {
-          name: row.name || row['Ten'] || row['장비명'] || '',
+        const nameVal = row.name || row['Ten'] || row['장비명'] || ''
+        if (!nameVal) continue
+
+        const insertData = {
+          name: nameVal,
           category: row.category || row['Phan loai'] || row['분류'] || 'other',
           status: row.status || row['Trang thai'] || row['상태'] || 'active',
           project_id: currentProject,
@@ -116,16 +119,7 @@ export default function EquipmentPage() {
           note: row.note || row['Ghi chu'] || row['비고'] || null,
         }
 
-        if (!insertData.name) continue
-
-        let { error: err } = await supabase.from('equipment_items').insert(insertData)
-
-        // Fallback: remove optional columns
-        if (err?.message?.includes('column')) {
-          delete insertData.product_code
-          delete insertData.manufacturer
-          ;({ error: err } = await supabase.from('equipment_items').insert(insertData))
-        }
+        const { error: err } = await supabase.from('equipment_items').insert(insertData)
 
         if (!err) successCount++
       }
@@ -176,7 +170,7 @@ export default function EquipmentPage() {
           .from('equipment_items')
           .select('id')
           .eq('name', fName.trim())
-          .eq('project_id', currentProject)
+          .eq('project_id', currentProject!)
           .order('created_at', { ascending: false })
           .limit(1)
         if (latest?.[0]?.id) {
@@ -444,7 +438,7 @@ export default function EquipmentPage() {
                   <option value="">-- Chon thiet bi / 장비 선택 --</option>
                   {equipment.map((eq) => (
                     <option key={eq.id} value={eq.id}>
-                      {eq.name} ({eq.product_code ?? eq.code})
+                      {eq.name} ({eq.product_code ?? '-'})
                     </option>
                   ))}
                 </select>
@@ -527,7 +521,7 @@ export default function EquipmentPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {equipment.map((eq) => {
-                  const st = STATUS_BADGE[eq.status] || STATUS_BADGE.idle
+                  const st = STATUS_BADGE[eq.status ?? 'idle'] || STATUS_BADGE.idle
                   return (
                     <tr key={eq.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2">
@@ -553,11 +547,11 @@ export default function EquipmentPage() {
                         {eq.name}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono">
-                        {eq.product_code ?? eq.code}
+                        {eq.product_code ?? '-'}
                       </td>
                       <td className="px-3 py-3">
                         <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                          {CAT_LABELS[eq.category] || eq.category}
+                          {CAT_LABELS[eq.category ?? ''] || eq.category || '-'}
                         </span>
                       </td>
                       <td className="px-3 py-3">
@@ -731,13 +725,13 @@ export default function EquipmentPage() {
                         {r.repair_date}
                       </td>
                       <td className="px-3 py-2 text-xs text-gray-700">
-                        {r.description}
+                        {r.detail ?? '-'}
                       </td>
                       <td className="px-3 py-2 text-xs text-gray-600 text-right font-mono">
                         {r.cost ? r.cost.toLocaleString('vi-VN') : '-'}
                       </td>
                       <td className="px-3 py-2 text-xs text-gray-600">
-                        {r.performed_by || '-'}
+                        {r.vendor || '-'}
                       </td>
                     </tr>
                   ))}

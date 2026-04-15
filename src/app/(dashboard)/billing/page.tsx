@@ -124,8 +124,8 @@ export default function BillingPage() {
     try {
       await saveBilling({
         billing_date: fDate,
-        note: fDesc.trim(),
-        claim_amount: amount,
+        description: fDesc.trim(),
+        amount: amount,
         contract_item: fContract.trim() || undefined,
         prepayment_deduction:
           parseFloat(fDeduction.replace(/[^0-9]/g, '')) || undefined,
@@ -163,7 +163,7 @@ export default function BillingPage() {
     .filter((b) => b.status === 'paid')
     .reduce((s, b) => s + (b.claim_amount || 0), 0)
   const totalPending = billings
-    .filter((b) => !['paid', 'rejected'].includes(b.status))
+    .filter((b) => !['paid', 'rejected'].includes(b.status ?? ''))
     .reduce((s, b) => s + (b.claim_amount || 0), 0)
   const totalPrepayment = prepayments.reduce(
     (s, p) => s + (((p.amount||0)-(p.deducted||0)) || 0),
@@ -454,9 +454,8 @@ export default function BillingPage() {
               <tbody className="divide-y divide-gray-100">
                 {billings.map((b) => {
                   const st =
-                    STATUS_BADGE[b.status] || STATUS_BADGE.draft
-                  const netAmount =
-                    b.net_amount ?? b.claim_amount - (b.prepayment_deduction || 0)
+                    STATUS_BADGE[b.status ?? 'draft'] || STATUS_BADGE.draft
+                  const netAmount = b.claim_amount ?? 0
 
                   // Determine next status
                   const currentIdx = STAGE_ORDER.indexOf(
@@ -476,15 +475,13 @@ export default function BillingPage() {
                         {b.note}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600">
-                        {b.contract_item || '-'}
+                        {'-'}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono font-bold text-gray-900 whitespace-nowrap">
                         {fmtVND(b.claim_amount)}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono text-red-600 whitespace-nowrap">
-                        {b.prepayment_deduction
-                          ? `-${fmtVND(b.prepayment_deduction)}`
-                          : '-'}
+                        {'-'}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono font-bold text-blue-700 whitespace-nowrap">
                         {fmtVND(netAmount)}
@@ -562,7 +559,7 @@ export default function BillingPage() {
                     <td className="px-3 py-3 text-right text-xs font-mono">
                       -{fmtVND(
                         billings.reduce(
-                          (s, b) => s + (b.prepayment_deduction || 0),
+                          (s, b) => s + (0 || 0),
                           0,
                         ),
                       )}
@@ -572,8 +569,7 @@ export default function BillingPage() {
                         billings.reduce(
                           (s, b) =>
                             s +
-                            (b.net_amount ??
-                              b.claim_amount - (b.prepayment_deduction || 0)),
+                            (b.claim_amount ?? 0),
                           0,
                         ),
                       )}

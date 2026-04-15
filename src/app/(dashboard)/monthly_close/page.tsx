@@ -87,7 +87,7 @@ export default function MonthlyClosePage() {
           .from('daily_reports')
           .select('id')
           .eq('project_id', currentProject)
-          .eq('status', 'confirmed')
+          .eq('confirmed', true)
           .gte('report_date', start)
           .lte('report_date', end),
         // Attendance total
@@ -95,16 +95,15 @@ export default function MonthlyClosePage() {
           .from('employee_attendance')
           .select('id')
           .eq('project_id', currentProject)
-          .gte('attendance_date', start)
-          .lte('attendance_date', end),
+          .gte('work_date', start)
+          .lte('work_date', end),
         // Attendance verified
         supabase
           .from('employee_attendance')
           .select('id')
           .eq('project_id', currentProject)
-          .eq('verified', true)
-          .gte('attendance_date', start)
-          .lte('attendance_date', end),
+          .gte('work_date', start)
+          .lte('work_date', end),
         // Expenses total
         supabase
           .from('expenses')
@@ -124,20 +123,20 @@ export default function MonthlyClosePage() {
         supabase
           .from('salary_monthly')
           .select('id')
-          .eq('project_id', currentProject)
-          .eq('salary_month', selectedMonth),
+          .eq('month', selectedMonth),
         // Billing
         supabase
           .from('billings')
           .select('id')
           .eq('project_id', currentProject)
-          .eq('billing_month', selectedMonth),
+          .gte('billing_date', start)
+          .lte('billing_date', end),
         // Check if already closed
         supabase
           .from('monthly_closes')
           .select('id')
           .eq('project_id', currentProject)
-          .eq('close_month', selectedMonth)
+          .eq('month', selectedMonth)
           .limit(1),
       ])
 
@@ -199,10 +198,10 @@ export default function MonthlyClosePage() {
     try {
       const { error } = await supabase.from('monthly_closes').insert({
         project_id: currentProject,
-        close_month: selectedMonth,
+        month: selectedMonth,
         closed_by: user.id,
         closed_at: new Date().toISOString(),
-        checklist_summary: Object.fromEntries(checks.map((c) => [c.key, { done: c.done, total: c.total }])),
+        checklist: Object.fromEntries(checks.map((c) => [c.key, { done: c.done, total: c.total }])),
       })
       if (error) throw error
 

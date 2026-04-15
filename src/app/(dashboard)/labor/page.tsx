@@ -10,13 +10,12 @@ import { supabase } from '@/lib/supabase'
 interface LaborRate {
   id: string
   project_id: string
-  category: string
+  worker_type: string
   daily_rate: number
-  ot_hourly: number
-  note: number
+  ot_hourly: number | null
   effective_from: string
-  note: string
-  created_at: string
+  note: string | null
+  created_at: string | null
 }
 
 /* ── Helpers ───────────────────────────────────────── */
@@ -147,12 +146,11 @@ export default function LaborPage() {
     try {
       const { error } = await supabase.from('labor_rates').insert({
         project_id: currentProject,
-        category,
+        worker_type: category,
         daily_rate: dailyRate,
         ot_hourly: otRate,
-        note: nightBonus,
         effective_from: today(),
-        note: user.id,
+        note: String(nightBonus),
       })
       if (error) throw error
       toast('ok', 'Da luu don gia / 단가 저장 완료')
@@ -373,10 +371,10 @@ export default function LaborPage() {
                         {fmtVND(r.daily_rate)}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono text-gray-700">
-                        {fmtVND(r.ot_hourly)}
+                        {fmtVND(r.ot_hourly ?? 0)}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono text-gray-700">
-                        {fmtVND(r.note)}
+                        {r.note ?? '-'}
                       </td>
                     </tr>
                   )

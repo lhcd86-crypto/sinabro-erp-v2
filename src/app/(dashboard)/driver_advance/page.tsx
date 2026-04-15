@@ -128,7 +128,6 @@ export default function DriverAdvancePage() {
       const payload = {
         project_id: currentProject,
         vehicle_id: fVehicleId || null,
-        plate_no: fPlate.trim() || null,
         cost_type: fType,
         amount,
         date: fDate,

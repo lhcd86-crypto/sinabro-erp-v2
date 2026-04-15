@@ -8,13 +8,14 @@ import { supabase } from '@/lib/supabase'
 
 interface PhotoRecord {
   id: string
-  project_id: string
+  project_id: string | null
   photo_url: string
   caption: string | null
   category: string | null
-  taken_date: string
-  uploaded_by: string
-  created_at: string
+  created_by: string | null
+  created_at: string | null
+  taken_date?: string | null
+  uploaded_by?: string | null
 }
 
 function today() {
@@ -114,7 +115,7 @@ export default function GalleryPage() {
         ...galPhotos,
       ].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
 
-      setPhotos(all)
+      setPhotos(all as PhotoRecord[])
     } catch {
       // silent - some tables may not exist yet
     } finally {
@@ -154,8 +155,7 @@ export default function GalleryPage() {
           photo_url: data.publicUrl,
           caption: uCaption.trim() || null,
           category: 'general',
-          taken_date: uDate,
-          uploaded_by: user.id,
+          created_by: user.id,
         })
       }
 
@@ -173,7 +173,7 @@ export default function GalleryPage() {
 
   /* ── Filtered photos ── */
   const filtered = dateFilter
-    ? photos.filter((p) => (p.taken_date ?? p.created_at?.slice(0, 10)) === dateFilter)
+    ? photos.filter((p) => (p.created_at?.slice(0, 10)) === dateFilter)
     : photos
 
   if (!currentProject) {

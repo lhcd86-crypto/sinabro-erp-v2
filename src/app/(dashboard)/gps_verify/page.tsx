@@ -8,15 +8,14 @@ import { supabase } from '@/lib/supabase'
 
 interface AttendanceGPS {
   id: string
-  user_id: string
-  attendance_date: string
-  check_in_time: string | null
-  check_out_time: string | null
-  check_in_lat: number | null
-  check_in_lng: number | null
-  check_out_lat: number | null
-  check_out_lng: number | null
-  users?: { name: string } | null
+  user_id: string | null
+  work_date: string | null
+  check_in: string | null
+  check_out: string | null
+  checkin_lat: number | null
+  checkin_lng: number | null
+  checkout_lat: number | null
+  checkout_lng: number | null
 }
 
 interface ProjectSite {
@@ -88,10 +87,10 @@ export default function GpsVerifyPage() {
       const [{ data: attData }, { data: projData }] = await Promise.all([
         supabase
           .from('employee_attendance')
-          .select('id, user_id, attendance_date, check_in_time, check_out_time, check_in_lat, check_in_lng, check_out_lat, check_out_lng, users(name)')
+          .select('id, user_id, work_date, check_in, check_out, checkin_lat, checkin_lng, checkout_lat, checkout_lng')
           .eq('project_id', currentProject)
-          .eq('attendance_date', selectedDate)
-          .order('check_in_time', { ascending: true }),
+          .eq('work_date', selectedDate)
+          .order('check_in', { ascending: true }),
         supabase
           .from('projects')
           .select('site_lat, site_lng')
@@ -117,15 +116,15 @@ export default function GpsVerifyPage() {
 
   /* -- Filter records with GPS ------------------------------ */
   const gpsRecords = records.filter(
-    (r) => r.check_in_lat != null && r.check_in_lng != null
+    (r) => r.checkin_lat != null && r.checkin_lng != null
   )
 
   const hasSite = siteLat != null && siteLng != null
 
   /* -- Stats ------------------------------------------------ */
   const withinRange = gpsRecords.filter((r) => {
-    if (!hasSite || r.check_in_lat == null || r.check_in_lng == null) return false
-    return haversine(r.check_in_lat, r.check_in_lng, siteLat!, siteLng!) <= 500
+    if (!hasSite || r.checkin_lat == null || r.checkin_lng == null) return false
+    return haversine(r.checkin_lat, r.checkin_lng, siteLat!, siteLng!) <= 500
   }).length
 
   const outOfRange = gpsRecords.length - withinRange
@@ -251,14 +250,11 @@ export default function GpsVerifyPage() {
               <tbody className="divide-y divide-gray-100">
                 {gpsRecords.map((r) => {
                   const dist =
-                    hasSite && r.check_in_lat != null && r.check_in_lng != null
-                      ? haversine(r.check_in_lat, r.check_in_lng, siteLat!, siteLng!)
+                    hasSite && r.checkin_lat != null && r.checkin_lng != null
+                      ? haversine(r.checkin_lat, r.checkin_lng, siteLat!, siteLng!)
                       : null
 
-                  const userName =
-                    typeof r.users === 'object' && r.users != null
-                      ? (r.users as { name: string }).name
-                      : r.user_id.slice(0, 8)
+                  const userName = r.user_id ?? '-'
 
                   return (
                     <tr key={r.id} className="hover:bg-gray-50">
@@ -266,16 +262,16 @@ export default function GpsVerifyPage() {
                         {userName}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">
-                        {r.check_in_time ? r.check_in_time.slice(0, 5) : '-'}
+                        {r.check_in ? r.check_in.slice(0, 5) : '-'}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono">
-                        {r.check_in_lat != null
-                          ? `${r.check_in_lat.toFixed(5)}, ${r.check_in_lng!.toFixed(5)}`
+                        {r.checkin_lat != null
+                          ? `${r.checkin_lat.toFixed(5)}, ${r.checkin_lng!.toFixed(5)}`
                           : '-'}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono">
-                        {r.check_out_lat != null
-                          ? `${r.check_out_lat.toFixed(5)}, ${r.check_out_lng!.toFixed(5)}`
+                        {r.checkout_lat != null
+                          ? `${r.checkout_lat.toFixed(5)}, ${r.checkout_lng!.toFixed(5)}`
                           : '-'}
                       </td>
                       <td className="px-3 py-3 text-xs">
@@ -288,9 +284,9 @@ export default function GpsVerifyPage() {
                         )}
                       </td>
                       <td className="px-3 py-3 text-xs">
-                        {r.check_in_lat != null ? (
+                        {r.checkin_lat != null ? (
                           <a
-                            href={googleMapsUrl(r.check_in_lat, r.check_in_lng!)}
+                            href={googleMapsUrl(r.checkin_lat, r.checkin_lng!)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline font-medium"

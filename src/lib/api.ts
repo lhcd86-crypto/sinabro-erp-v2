@@ -98,7 +98,8 @@ export async function fetchTable<T = unknown>(
   }
 
   // Non-edge tables: use supabase client directly
-  let query = supabase.from(table).select(options?.select ?? '*')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase.from as any)(table).select(options?.select ?? '*') as any
 
   if (options?.filters) {
     for (const [key, value] of Object.entries(options.filters)) {
@@ -136,21 +137,23 @@ export async function mutateTable(
 
   // Non-edge tables: use supabase client directly
   if (method === 'POST') {
-    const { data, error } = await supabase.from(table).insert(body as Record<string, unknown>).select()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.from as any)(table).insert(body).select()
     return { data, error: error?.message ?? null }
   }
 
   if (method === 'DELETE') {
     if (!params?.id) return { data: null, error: 'id is required for DELETE' }
-    const { data, error } = await supabase.from(table).delete().eq('id', params.id).select()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.from as any)(table).delete().eq('id', params.id).select()
     return { data, error: error?.message ?? null }
   }
 
   // PUT / PATCH
   if (!params?.id) return { data: null, error: 'id is required for UPDATE' }
-  const { data, error } = await supabase
-    .from(table)
-    .update(body as Record<string, unknown>)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from as any)(table)
+    .update(body)
     .eq('id', params.id)
     .select()
   return { data, error: error?.message ?? null }

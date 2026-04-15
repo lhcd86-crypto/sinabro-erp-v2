@@ -281,7 +281,7 @@ export default function ReportPage() {
   }
 
   /* ── Material summary text ── */
-  const matSummary = (r: { materials?: MaterialQty; extra_materials?: ExtraMaterial[] }) => {
+  const matSummary = (r: { materials?: MaterialQty; extra_materials?: unknown }) => {
     const m = r.materials
     if (!m) return '-'
     const parts: string[] = []
@@ -291,9 +291,8 @@ export default function ReportPage() {
     if (m.m230) parts.push(`M230:${m.m230}k`)
     if (m.db2015) parts.push(`DB:${m.db2015}m`)
     if (m.etc) parts.push(`etc:${m.etc}`)
-    const extra = r.extra_materials
-    if (extra && extra.length > 0) {
-      extra.forEach((e) => {
+    if (Array.isArray(r.extra_materials) && r.extra_materials.length > 0) {
+      (r.extra_materials as ExtraMaterial[]).forEach((e) => {
         if (e.name) parts.push(`${e.name}:${e.qty}${e.unit}`)
       })
     }

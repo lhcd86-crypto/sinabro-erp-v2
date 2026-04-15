@@ -164,9 +164,9 @@ export default function AttendanceMgmtPage() {
       // Insert exception record if reason given
       if (editModal.reason.trim()) {
         const { error: exErr } = await supabase.from('attendance_exceptions').insert({
-          attendance_id: editModal.row.id,
           user_id: editModal.row.user_id,
-          date: editModal.row.date,
+          exception_date: editModal.row.date,
+          exception_type: 'correction',
           reason: editModal.reason.trim(),
           approved_by: user.id,
           project_id: currentProject,

@@ -72,8 +72,8 @@ export default function GongmuPage() {
     if (m.m230) parts.push(`M230:${m.m230}k`)
     if (m.db2015) parts.push(`DB:${m.db2015}m`)
     if (m.etc) parts.push(`etc:${m.etc}`)
-    if (r.extra_materials?.length) {
-      r.extra_materials.forEach((e) => {
+    if (Array.isArray(r.extra_materials) && r.extra_materials.length) {
+      (r.extra_materials as ExtraMaterial[]).forEach((e) => {
         if (e.name) parts.push(`${e.name}:${e.qty}${e.unit}`)
       })
     }
@@ -81,8 +81,6 @@ export default function GongmuPage() {
   }
 
   const projectLabel = (r: DailyReportRow) => {
-    const p = r.projects
-    if (p) return `${p.code} ${p.name}`
     const found = projects.find((pr) => pr.id === r.project_id)
     return found ? `${found.code} ${found.name}` : r.project_id
   }

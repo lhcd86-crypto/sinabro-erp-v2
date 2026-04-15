@@ -8,23 +8,27 @@ import { supabase } from '@/lib/supabase'
 
 interface SiteWorker {
   id: string
-  name: string
-  role: string | null
+  worker_name: string
+  worker_type: string
 }
 
 interface TBMRecord {
   id: string
-  project_id: string
+  project_id: string | null
   tbm_date: string
   tbm_time: string | null
-  hazards: string[]
-  measures: string | null
-  work_desc: string | null
-  attendee_ids: string[]
-  safety_checklist: Record<string, boolean>
-  photo_urls: string[]
-  created_by: string
-  created_at: string
+  hazards: string[] | null
+  safety_measures: string | null
+  work_description: string | null
+  attendee_ids: string[] | null
+  attendee_count: number | null
+  safety_checklist: string[] | null
+  safety_unchecked: string[] | null
+  photo_urls: string[] | null
+  created_by: string | null
+  created_by_name: string | null
+  created_at: string | null
+  signatures: unknown
 }
 
 /* ── Constants ───────────────────────────────────── */
@@ -157,7 +161,7 @@ export default function TBMPage() {
   async function uploadPhotos(files: File[]): Promise<string[]> {
     const urls: string[] = []
     for (const file of files) {
-      const path = `tbm/${currentProject}/${fDate}_${Date.now()}_${file.worker_name}`
+      const path = `tbm/${currentProject}/${fDate}_${Date.now()}_${file.name}`
       const { error } = await supabase.storage
         .from('report-photos')
         .upload(path, file, { upsert: true })
@@ -192,10 +196,10 @@ export default function TBMPage() {
         tbm_date: fDate,
         tbm_time: fTime || null,
         hazards: Array.from(fHazards),
-        measures: fMeasures.trim() || null,
-        work_desc: fWorkDesc.trim() || null,
+        safety_measures: fMeasures.trim() || null,
+        work_description: fWorkDesc.trim() || null,
         attendee_ids: Array.from(selectedAttendees),
-        safety_checklist: fSafetyChecklist,
+        attendee_count: selectedAttendees.size,
         photo_urls: photoUrls,
         created_by: user.id,
       })
@@ -529,13 +533,13 @@ export default function TBMPage() {
                       </div>
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-700 max-w-[200px] truncate">
-                      {r.work_desc ?? '-'}
+                      {r.work_description ?? '-'}
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-600 text-right font-mono">
                       {(r.attendee_ids ?? []).length}
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-500">
-                      {(r.photo_urls ?? []).length > 0 ? `${r.photo_urls.length} anh` : '-'}
+                      {(r.photo_urls ?? []).length > 0 ? `${(r.photo_urls ?? []).length} anh` : '-'}
                     </td>
                   </tr>
                 ))}

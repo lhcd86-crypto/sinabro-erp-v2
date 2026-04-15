@@ -61,23 +61,23 @@ export default function AnnualReportPage() {
         await Promise.all([
           supabase
             .from('billings')
-            .select('paid_amount, payment_date, period')
-            .gte('period', `${year}-01`)
-            .lte('period', `${year}-12`),
+            .select('received_amount, received_date, billing_date')
+            .gte('billing_date', `${year}-01-01`)
+            .lte('billing_date', `${year}-12-31`),
           supabase
             .from('expenses')
-            .select('amount, date')
-            .gte('date', yearStart)
-            .lte('date', yearEnd),
+            .select('total_amount, expense_date')
+            .gte('expense_date', yearStart)
+            .lte('expense_date', yearEnd),
           supabase
             .from('projects')
             .select('id')
             .eq('status', 'active'),
           supabase
             .from('employee_attendance')
-            .select('user_id, date')
-            .gte('date', yearStart)
-            .lte('date', yearEnd),
+            .select('user_id, work_date')
+            .gte('work_date', yearStart)
+            .lte('work_date', yearEnd),
         ])
 
       const billRows = billings ?? []
@@ -96,15 +96,15 @@ export default function AnnualReportPage() {
         const prefix = `${year}-${String(m).padStart(2, '0')}`
 
         const rev = billRows
-          .filter((b) => (b.period ?? '').startsWith(prefix))
-          .reduce((s, b) => s + (b.paid_amount ?? 0), 0)
+          .filter((b) => (b.billing_date ?? '').startsWith(prefix))
+          .reduce((s, b) => s + (b.received_amount ?? 0), 0)
 
         const exp = expRows
-          .filter((e) => (e.date ?? '').startsWith(prefix))
-          .reduce((s, e) => s + (e.amount ?? 0), 0)
+          .filter((e) => (e.expense_date ?? '').startsWith(prefix))
+          .reduce((s, e) => s + (e.total_amount ?? 0), 0)
 
         const wkrs = new Set(
-          attRows.filter((a) => (a.date ?? '').startsWith(prefix)).map((a) => a.user_id),
+          attRows.filter((a) => (a.work_date ?? '').startsWith(prefix)).map((a) => a.user_id),
         )
 
         rows.push({ month: m, revenue: rev, expenses: exp, profit: rev - exp, workers: wkrs.size })

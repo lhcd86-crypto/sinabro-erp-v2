@@ -144,7 +144,7 @@ export function useAdvance() {
       if (!user || !currentProject) throw new Error('No user or project')
 
       const now = new Date().toISOString()
-      const insertData: Record<string, unknown> = {
+      const { error: err } = await supabase.from('advances').insert({
         project_id: currentProject,
         user_id: user.id,
         requester_name: user.name,
@@ -154,7 +154,7 @@ export function useAdvance() {
         detail: rec.detail,
         receipt_type: rec.receipt_type,
         receipt_url: rec.receipt_url ?? null,
-        status: '대기중', // 대기중
+        status: '대기중',
         current_step: 'recorded',
         approval_chain: {
           recorded: {
@@ -164,29 +164,7 @@ export function useAdvance() {
             at: now,
           },
         },
-      }
-
-      let { error: err } = await supabase.from('advances').insert(insertData)
-
-      // Fallback: approval columns may not exist
-      if (
-        err?.message?.includes('approval_chain') ||
-        err?.message?.includes('current_step')
-      ) {
-        delete insertData.approval_chain
-        delete insertData.current_step
-        ;({ error: err } = await supabase.from('advances').insert(insertData))
-      }
-
-      // Fallback: receipt columns may not exist
-      if (
-        err?.message?.includes('receipt_type') ||
-        err?.message?.includes('receipt_url')
-      ) {
-        delete insertData.receipt_type
-        delete insertData.receipt_url
-        ;({ error: err } = await supabase.from('advances').insert(insertData))
-      }
+      })
 
       if (err) throw new Error(err.message)
       await loadAdvances()
@@ -205,57 +183,26 @@ export function useAdvance() {
       if (!user || !currentProject) throw new Error('No user or project')
 
       const now = new Date().toISOString()
-      const insertData: Record<string, unknown> = {
-        project_id: currentProject,
-        user_id: user.id,
-        amount: rec.amount,
-        needed_date: rec.needed_date,
-        purpose: rec.purpose || '기타',
-        reason: rec.reason,
-        status: '대기', // 대기
-        current_step: 'requested',
-        approval_chain: {
-          requested: {
-            by: user.id,
-            by_name: user.name,
-            role: user.role,
-            at: now,
-          },
-        },
-      }
-
-      let { error: err } = await supabase
+      const { error: err } = await supabase
         .from('advance_requests')
-        .insert(insertData)
-
-      // Fallback: approval columns
-      if (
-        err?.message?.includes('approval_chain') ||
-        err?.message?.includes('current_step')
-      ) {
-        delete insertData.approval_chain
-        delete insertData.current_step
-        ;({ error: err } = await supabase
-          .from('advance_requests')
-          .insert(insertData))
-      }
-
-      // Fallback: purpose/reason columns
-      if (
-        err?.message?.includes('purpose') ||
-        err?.message?.includes('reason')
-      ) {
-        const minData = {
+        .insert({
           project_id: currentProject,
           user_id: user.id,
           amount: rec.amount,
           needed_date: rec.needed_date,
+          purpose: rec.purpose || '기타',
+          reason: rec.reason,
           status: '대기',
-        }
-        ;({ error: err } = await supabase
-          .from('advance_requests')
-          .insert(minData))
-      }
+          current_step: 'requested',
+          approval_chain: {
+            requested: {
+              by: user.id,
+              by_name: user.name,
+              role: user.role,
+              at: now,
+            },
+          },
+        })
 
       if (err) throw new Error(err.message)
       await loadRequests()

@@ -125,6 +125,7 @@ export default function StaffPage() {
         const { error } = await supabase
           .from('users')
           .insert({
+            id: crypto.randomUUID(),
             name: mName.trim(),
             email: mEmail.trim(),
             role: mRole,

@@ -9,16 +9,16 @@ import { supabase } from '@/lib/supabase'
 
 interface Vendor {
   id: string
-  project_id: string
   name: string
   representative: string | null
   phone: string | null
   email: string | null
-  vendor_type: string
+  vendor_type: string | null
   address: string | null
   bank_account: string | null
-  notes: string | null
-  rating: boolean
+  note: string | null
+  rating: number | null
+  created_at: string | null
 }
 
 const CATEGORIES = [
@@ -72,7 +72,6 @@ export default function VendorsPage() {
       const { data, error } = await supabase
         .from('vendors')
         .select('*')
-        .eq('project_id', currentProject)
         .order('name')
       if (error) throw error
       setVendors((data ?? []) as Vendor[])
@@ -98,8 +97,8 @@ export default function VendorsPage() {
   const openEdit = (v: Vendor) => {
     setEditing(v)
     setMCompany(v.name); setMContact(v.representative ?? ''); setMPhone(v.phone ?? '')
-    setMEmail(v.email ?? ''); setMCat(v.vendor_type); setMAddress(v.address ?? '')
-    setMTaxId(v.bank_account ?? ''); setMNotes(v.notes ?? ''); setMActive(v.rating)
+    setMEmail(v.email ?? ''); setMCat(v.vendor_type ?? ''); setMAddress(v.address ?? '')
+    setMTaxId(v.bank_account ?? ''); setMNotes(v.note ?? ''); setMActive(!!v.rating)
     setShowModal(true)
   }
 
@@ -110,7 +109,6 @@ export default function VendorsPage() {
     setSaving(true)
     try {
       const payload = {
-        project_id: currentProject,
         name: mCompany.trim(),
         representative: mContact.trim() || null,
         phone: mPhone.trim() || null,
@@ -118,8 +116,8 @@ export default function VendorsPage() {
         vendor_type: mCat,
         address: mAddress.trim() || null,
         bank_account: mTaxId.trim() || null,
-        notes: mNotes.trim() || null,
-        rating: mActive,
+        note: mNotes.trim() || null,
+        rating: mActive ? 1 : 0,
       }
       if (editing) {
         const { error } = await supabase.from('vendors').update(payload).eq('id', editing.id)
@@ -226,7 +224,7 @@ export default function VendorsPage() {
                 <tr key={v.id} className="hover:bg-gray-50">
                   <td className="px-5 py-2 text-gray-900 font-medium whitespace-nowrap">{v.name}</td>
                   <td className="px-3 py-2 text-xs whitespace-nowrap">
-                    <span className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">{catLabel(v.vendor_type)}</span>
+                    <span className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">{catLabel(v.vendor_type ?? '')}</span>
                   </td>
                   <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{v.representative ?? '-'}</td>
                   <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{v.phone ?? '-'}</td>
