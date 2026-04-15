@@ -103,6 +103,7 @@ export function useExpense() {
         expense_date: rec.expense_date,
         category: rec.category,
         project_id: currentProject,
+        item_name: rec.description,
         description: rec.description,
         vendor: rec.vendor,
         unit: rec.unit,

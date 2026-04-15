@@ -380,11 +380,10 @@ export default function ExpensePage() {
               </label>
               <input
                 type="text"
-                inputMode="numeric"
-                value={fTotal}
-                onChange={(e) => setFTotal(e.target.value)}
+                readOnly
+                value={fTotal ? Number(fTotal).toLocaleString('vi-VN') : ''}
                 placeholder="Tu dong / 자동 계산"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700 font-mono"
               />
             </div>
 
@@ -413,11 +412,10 @@ export default function ExpensePage() {
               </label>
               <input
                 type="text"
-                inputMode="numeric"
-                value={fVatAmt}
-                onChange={(e) => setFVatAmt(e.target.value)}
+                readOnly
+                value={fVatAmt ? Number(fVatAmt).toLocaleString('vi-VN') : '0'}
                 placeholder="0"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700 font-mono"
               />
             </div>
 
@@ -428,11 +426,10 @@ export default function ExpensePage() {
               </label>
               <input
                 type="text"
-                inputMode="numeric"
-                value={fGrand}
-                onChange={(e) => setFGrand(e.target.value)}
+                readOnly
+                value={fGrand ? Number(fGrand).toLocaleString('vi-VN') : '0'}
                 placeholder="0"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 font-bold font-mono text-blue-700"
               />
             </div>
 
