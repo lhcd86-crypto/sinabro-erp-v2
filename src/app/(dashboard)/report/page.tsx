@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import {
   useDailyReport,
@@ -9,6 +9,7 @@ import {
   type ExtraMaterial,
 } from '@/hooks/useDailyReport'
 import { useAutoSave } from '@/hooks/useAutoSave'
+import { supabase } from '@/lib/supabase'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -69,6 +70,69 @@ export default function ReportPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [showRestore, setShowRestore] = useState(false)
   const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null)
+  const [copyLoading, setCopyLoading] = useState(false)
+  const [copyToast, setCopyToast] = useState<string | null>(null)
+
+  /* ── Copy yesterday's report ── */
+  const handleCopyYesterday = useCallback(async () => {
+    if (!user || !currentProject) return
+    setCopyLoading(true)
+    setCopyToast(null)
+    try {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayStr = yesterday.toISOString().slice(0, 10)
+
+      const { data, error: err } = await supabase
+        .from('daily_reports')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('report_date', yesterdayStr)
+        .eq('project_id', currentProject)
+        .limit(1)
+        .maybeSingle()
+
+      if (err) throw err
+      if (!data) {
+        setCopyToast('Khong tim thay bao cao hom qua / 어제 일보가 없습니다')
+        setTimeout(() => setCopyToast(null), 4000)
+        return
+      }
+
+      setWorkType(data.work_type || '주간')
+      setWeather(data.weather || 'Nắng')
+      setWorkers({
+        wd_am: data.direct_worker_am ?? 0,
+        wd_pm: data.direct_worker_pm ?? 0,
+        wd_ni: data.direct_worker_ni ?? 0,
+        wi_am: data.indirect_worker_am ?? 0,
+        wi_pm: data.indirect_worker_pm ?? 0,
+        wi_ni: data.indirect_worker_ni ?? 0,
+        vn_am: data.vn_engineer_am ?? 0,
+        vn_pm: data.vn_engineer_pm ?? 0,
+        vn_ni: data.vn_engineer_ni ?? 0,
+        ot_direct: 0,
+        ot_indirect: 0,
+      })
+      setMaterials({
+        v250: data.qty_v250 ?? 0,
+        sv250: data.qty_sv250 ?? 0,
+        hlm: data.qty_hlm ?? 0,
+        m230: data.qty_m230 ?? 0,
+        db2015: data.qty_db2015 ?? 0,
+        etc: data.qty_other ?? 0,
+      })
+      setDescription(data.work_desc || data.note || '')
+      setDate(today())
+      setCopyToast('Da sao chep / 어제 일보를 복사했습니다')
+      setTimeout(() => setCopyToast(null), 4000)
+    } catch {
+      setCopyToast('Loi khi sao chep / 복사 오류')
+      setTimeout(() => setCopyToast(null), 4000)
+    } finally {
+      setCopyLoading(false)
+    }
+  }, [user, currentProject])
 
   /* ── Auto-save ── */
   const { save: autoSave, load: autoLoad, clear: autoClear } = useAutoSave<DraftData>('daily-report')
@@ -287,6 +351,14 @@ export default function ReportPage() {
             </span>
           )}
           <button
+            onClick={handleCopyYesterday}
+            disabled={copyLoading || !currentProject}
+            className="print:hidden inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50 transition-colors"
+            title="Sao chep bao cao hom qua / 어제 일보 복사"
+          >
+            {copyLoading ? '...' : '📋 Hom qua / 어제 복사'}
+          </button>
+          <button
             onClick={() => window.print()}
             className="print:hidden inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
             title="In / 인쇄"
@@ -295,6 +367,19 @@ export default function ReportPage() {
           </button>
         </div>
       </div>
+
+      {/* Copy yesterday toast */}
+      {copyToast && (
+        <div
+          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium ${
+            copyToast.includes('Da sao chep')
+              ? 'bg-green-600 text-white'
+              : 'bg-red-600 text-white'
+          }`}
+        >
+          {copyToast}
+        </div>
+      )}
 
       {/* Restore draft banner */}
       {showRestore && (

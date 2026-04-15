@@ -12,6 +12,7 @@ import {
 } from '@/hooks/useAttendance'
 import { isAdmin } from '@/lib/roles'
 import { exportToExcel, formatAttendanceForExport } from '@/lib/excel'
+import { supabase } from '@/lib/supabase'
 
 /* ── Helpers ── */
 
@@ -47,6 +48,9 @@ export default function AttendancePage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
   const [selectedMonth, setSelectedMonth] = useState(todayYearMonth())
+  const [showHeatmap, setShowHeatmap] = useState(false)
+  const [heatmapData, setHeatmapData] = useState<Record<string, 'green' | 'yellow' | 'red' | 'blue'>>({})
+  const [heatmapLoading, setHeatmapLoading] = useState(false)
 
   /* ── Init ── */
   useEffect(() => {
@@ -62,6 +66,83 @@ export default function AttendancePage() {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 4000)
   }, [])
+
+  /* ── Heatmap loader ── */
+  const loadHeatmap = useCallback(async () => {
+    if (!user || !currentProject) return
+    setHeatmapLoading(true)
+    try {
+      const [year, month] = selectedMonth.split('-').map(Number)
+      const startDate = `${selectedMonth}-01`
+      const lastDay = new Date(year, month, 0).getDate()
+      const endDate = `${selectedMonth}-${String(lastDay).padStart(2, '0')}`
+
+      // Load attendance records for the month
+      const { data: attData } = await supabase
+        .from('employee_attendance')
+        .select('work_date, check_in, check_out, work_hours')
+        .eq('user_id', user.id)
+        .gte('work_date', startDate)
+        .lte('work_date', endDate)
+
+      // Load approved leave requests for the month
+      const { data: leaveData } = await supabase
+        .from('leave_requests')
+        .select('start_date, end_date')
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .lte('start_date', endDate)
+        .gte('end_date', startDate)
+
+      const map: Record<string, 'green' | 'yellow' | 'red' | 'blue'> = {}
+
+      // Build leave date set
+      const leaveDates = new Set<string>()
+      ;(leaveData ?? []).forEach((lv: { start_date: string; end_date: string }) => {
+        const s = new Date(lv.start_date)
+        const e = new Date(lv.end_date)
+        for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+          leaveDates.add(d.toISOString().slice(0, 10))
+        }
+      })
+
+      // Build attendance map
+      const attMap = new Map<string, { work_hours: number | null }>()
+      ;(attData ?? []).forEach((rec: { work_date: string; work_hours: number | null }) => {
+        attMap.set(rec.work_date, rec)
+      })
+
+      // Fill calendar
+      for (let day = 1; day <= lastDay; day++) {
+        const dateStr = `${selectedMonth}-${String(day).padStart(2, '0')}`
+        const dow = new Date(dateStr).getDay()
+        if (dow === 0 || dow === 6) continue // weekends handled in render as gray
+
+        if (leaveDates.has(dateStr)) {
+          map[dateStr] = 'blue'
+        } else if (attMap.has(dateStr)) {
+          const hrs = attMap.get(dateStr)!.work_hours ?? 0
+          map[dateStr] = hrs >= 8 ? 'green' : 'yellow'
+        } else {
+          // Only mark as red if the date is in the past
+          const dateObj = new Date(dateStr)
+          if (dateObj < new Date(new Date().toISOString().slice(0, 10))) {
+            map[dateStr] = 'red'
+          }
+        }
+      }
+
+      setHeatmapData(map)
+    } catch {
+      // silent
+    } finally {
+      setHeatmapLoading(false)
+    }
+  }, [user, currentProject, selectedMonth])
+
+  useEffect(() => {
+    if (showHeatmap) loadHeatmap()
+  }, [showHeatmap, loadHeatmap])
 
   /* ── GPS acquire ── */
   const acquireGPS = async (): Promise<GPSCoords | null> => {
@@ -493,6 +574,87 @@ export default function AttendancePage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* ── Heatmap Toggle & Calendar ── */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-gray-900">
+            Lich nhiet do / 근태 히트맵
+          </h2>
+          <button
+            onClick={() => setShowHeatmap(!showHeatmap)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+              showHeatmap
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+            }`}
+          >
+            {showHeatmap ? 'An Heatmap / 숨기기' : 'Hien Heatmap / 보기'}
+          </button>
+        </div>
+
+        {showHeatmap && (
+          <>
+            {heatmapLoading ? (
+              <p className="text-sm text-gray-400">Dang tai... / 로딩 중...</p>
+            ) : (() => {
+              const [year, month] = selectedMonth.split('-').map(Number)
+              const lastDay = new Date(year, month, 0).getDate()
+              const firstDow = new Date(year, month - 1, 1).getDay()
+              const dayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+              const cells: { day: number | null; dateStr: string }[] = []
+              for (let i = 0; i < firstDow; i++) cells.push({ day: null, dateStr: '' })
+              for (let d = 1; d <= lastDay; d++) {
+                cells.push({ day: d, dateStr: `${selectedMonth}-${String(d).padStart(2, '0')}` })
+              }
+              return (
+                <div>
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-3 mb-3 text-[10px] text-gray-600">
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-400 inline-block" /> Binh thuong 8h+ / 정상</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-400 inline-block" /> {'<'}8h / 지각/조퇴</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-400 inline-block" /> Vang / 결근</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-400 inline-block" /> Nghi phep / 휴가</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-200 inline-block" /> Cuoi tuan / 주말</span>
+                  </div>
+                  {/* Day headers */}
+                  <div className="grid grid-cols-7 gap-1 mb-1">
+                    {dayLabels.map((dl) => (
+                      <div key={dl} className="text-center text-[10px] font-medium text-gray-400">{dl}</div>
+                    ))}
+                  </div>
+                  {/* Calendar grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {cells.map((cell, idx) => {
+                      if (cell.day === null) return <div key={`e-${idx}`} className="h-8" />
+                      const dow = new Date(cell.dateStr).getDay()
+                      const isWeekend = dow === 0 || dow === 6
+                      const status = heatmapData[cell.dateStr]
+                      let bg = 'bg-gray-50'
+                      if (isWeekend) bg = 'bg-gray-200'
+                      else if (status === 'green') bg = 'bg-green-400'
+                      else if (status === 'yellow') bg = 'bg-yellow-400'
+                      else if (status === 'red') bg = 'bg-red-400'
+                      else if (status === 'blue') bg = 'bg-blue-400'
+                      return (
+                        <div
+                          key={cell.dateStr}
+                          className={`h-8 rounded flex items-center justify-center text-[11px] font-medium ${bg} ${
+                            isWeekend ? 'text-gray-500' : status ? 'text-white' : 'text-gray-400'
+                          }`}
+                          title={cell.dateStr}
+                        >
+                          {cell.day}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
+          </>
+        )}
       </div>
     </div>
   )

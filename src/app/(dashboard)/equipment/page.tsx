@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { isAdmin } from '@/lib/roles'
 import {
@@ -9,6 +9,8 @@ import {
   EQUIPMENT_CATEGORIES,
   type EquipmentRecord,
 } from '@/hooks/useEquipment'
+import { supabase } from '@/lib/supabase'
+import * as XLSX from 'xlsx'
 
 /* ── Helpers ───────────────────────────────────────── */
 
@@ -72,6 +74,10 @@ export default function EquipmentPage() {
   const [rCost, setRCost] = useState('')
   const [rBy, setRBy] = useState('')
 
+  // Excel import
+  const excelRef = useRef<HTMLInputElement>(null)
+  const [importLoading, setImportLoading] = useState(false)
+
   /* ── Load data ─── */
   useEffect(() => {
     if (user) loadEquipment()
@@ -82,6 +88,55 @@ export default function EquipmentPage() {
     setMsg({ type, text })
     setTimeout(() => setMsg(null), 4000)
   }, [])
+
+  /* ── Excel Import handler ─── */
+  const handleExcelImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !currentProject || !user) return
+    setImportLoading(true)
+    try {
+      const buffer = await file.arrayBuffer()
+      const wb = XLSX.read(buffer, { type: 'array' })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws)
+
+      let successCount = 0
+      const total = rows.length
+
+      for (const row of rows) {
+        const insertData: Record<string, unknown> = {
+          name: row.name || row['Ten'] || row['장비명'] || '',
+          category: row.category || row['Phan loai'] || row['분류'] || 'other',
+          status: row.status || row['Trang thai'] || row['상태'] || 'active',
+          project_id: currentProject,
+          product_code: row.product_code || row['Ma'] || row['코드'] || null,
+          manufacturer: row.manufacturer || row['Nha san xuat'] || row['제조사'] || null,
+          note: row.note || row['Ghi chu'] || row['비고'] || null,
+        }
+
+        if (!insertData.name) continue
+
+        let { error: err } = await supabase.from('equipment_items').insert(insertData)
+
+        // Fallback: remove optional columns
+        if (err?.message?.includes('column')) {
+          delete insertData.product_code
+          delete insertData.manufacturer
+          ;({ error: err } = await supabase.from('equipment_items').insert(insertData))
+        }
+
+        if (!err) successCount++
+      }
+
+      await loadEquipment()
+      toast('ok', `${successCount}/${total} thiet bi da dang ky / ${successCount}/${total} 건 등록 완료`)
+    } catch (err) {
+      toast('err', err instanceof Error ? err.message : 'Excel import that bai / Excel 가져오기 실패')
+    } finally {
+      setImportLoading(false)
+      if (excelRef.current) excelRef.current.value = ''
+    }
+  }, [currentProject, user, loadEquipment, toast])
 
   /* ── Submit new equipment ─── */
   async function handleAdd() {
@@ -198,12 +253,28 @@ export default function EquipmentPage() {
             Quan ly thiet bi va cong cu / 장비 및 공구 관리
           </p>
         </div>
-        <button
-          onClick={() => setShowAdd(!showAdd)}
-          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          {showAdd ? 'Dong / 닫기' : 'Them moi / 장비 등록'}
-        </button>
+        <div className="flex gap-2">
+          <input
+            ref={excelRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleExcelImport}
+            className="hidden"
+          />
+          <button
+            onClick={() => excelRef.current?.click()}
+            disabled={importLoading}
+            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {importLoading ? '...' : '📥 Excel'}
+          </button>
+          <button
+            onClick={() => setShowAdd(!showAdd)}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            {showAdd ? 'Dong / 닫기' : 'Them moi / 장비 등록'}
+          </button>
+        </div>
       </div>
 
       {/* ── Add Equipment Form ── */}

@@ -44,6 +44,7 @@ export default function SchedulePage() {
   const [fProgress, setFProgress] = useState('0')
   const [fAssignee, setFAssignee] = useState('')
   const [fNotes, setFNotes] = useState('')
+  const [syncLoading, setSyncLoading] = useState(false)
 
   const toast = useCallback((type: 'ok' | 'err', text: string) => {
     setMsg({ type, text })
@@ -73,6 +74,91 @@ export default function SchedulePage() {
   useEffect(() => {
     if (user && currentProject) loadData()
   }, [user, currentProject, loadData])
+
+  /* ── Sync progress from daily reports ── */
+  const handleSyncProgress = useCallback(async () => {
+    if (!currentProject || !user) return
+    setSyncLoading(true)
+    try {
+      // Get cumulative material quantities from daily_reports
+      const { data: reportData, error: rErr } = await supabase
+        .from('daily_reports')
+        .select('qty_v250, qty_sv250, qty_hlm, qty_m230, qty_db2015, qty_other')
+        .eq('project_id', currentProject)
+
+      if (rErr) throw rErr
+
+      const cumulative: Record<string, number> = {
+        qty_v250: 0, qty_sv250: 0, qty_hlm: 0, qty_m230: 0, qty_db2015: 0, qty_other: 0,
+      }
+      ;(reportData ?? []).forEach((r: Record<string, number | null>) => {
+        Object.keys(cumulative).forEach((k) => {
+          cumulative[k] += r[k] ?? 0
+        })
+      })
+
+      // Try to get contract quantities
+      let contractQty: Record<string, number> = {}
+      try {
+        const { data: qData } = await supabase
+          .from('quantity_items')
+          .select('item_code, contract_qty')
+          .eq('project_id', currentProject)
+
+        const qMap: Record<string, number> = {}
+        ;(qData ?? []).forEach((q: { item_code: string; contract_qty: number }) => {
+          qMap[q.item_code] = q.contract_qty ?? 0
+        })
+        contractQty = qMap
+      } catch {
+        // quantity_items table may not exist
+      }
+
+      // Calculate progress percentages per material
+      const materialNames: Record<string, string> = {
+        qty_v250: 'V250', qty_sv250: 'SV250', qty_hlm: 'HLM',
+        qty_m230: 'M230', qty_db2015: 'DB2015', qty_other: 'Other',
+      }
+
+      const summaryParts: string[] = []
+      let totalActual = 0
+      let totalContract = 0
+
+      Object.keys(cumulative).forEach((key) => {
+        const actual = cumulative[key]
+        const code = materialNames[key] || key
+        const contract = contractQty[code] || 0
+        if (actual > 0) {
+          summaryParts.push(`${code}: ${actual}${contract ? `/${contract}` : ''}`)
+          totalActual += actual
+          totalContract += contract
+        }
+      })
+
+      // Update schedule items progress if we have contract data
+      if (totalContract > 0) {
+        const overallPct = Math.min(100, Math.round((totalActual / totalContract) * 100))
+        // Update all schedule items proportionally
+        for (const item of items) {
+          const newProgress = Math.min(100, Math.round(overallPct * (item.progress > 0 ? 1 : 0.5)))
+          if (newProgress !== item.progress) {
+            await supabase
+              .from('schedule_items')
+              .update({ progress: newProgress })
+              .eq('id', item.id)
+          }
+        }
+        await loadData()
+        toast('ok', `Dong bo hoan thanh: ${overallPct}% / 동기화 완료: ${overallPct}%`)
+      } else {
+        toast('ok', `Tong hop: ${summaryParts.join(', ') || 'Khong co du lieu'} / 누적 실적 집계 완료`)
+      }
+    } catch (e) {
+      toast('err', e instanceof Error ? e.message : 'Dong bo that bai / 동기화 실패')
+    } finally {
+      setSyncLoading(false)
+    }
+  }, [currentProject, user, items, loadData, toast])
 
   /* ── Reset form ── */
   function resetForm() {
@@ -204,14 +290,25 @@ export default function SchedulePage() {
             Quan ly cong trinh va tien do / 공정 일정 및 진도 관리
           </p>
         </div>
-        {canEdit && (
-          <button
-            onClick={() => { resetForm(); setShowForm(true) }}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            + Them / 추가
-          </button>
-        )}
+        <div className="flex gap-2">
+          {canEdit && (
+            <button
+              onClick={handleSyncProgress}
+              disabled={syncLoading}
+              className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+            >
+              {syncLoading ? '...' : '🔄 Tu dong TD / 공정률 동기화'}
+            </button>
+          )}
+          {canEdit && (
+            <button
+              onClick={() => { resetForm(); setShowForm(true) }}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              + Them / 추가
+            </button>
+          )}
+        </div>
       </div>
 
       {/* KPI */}

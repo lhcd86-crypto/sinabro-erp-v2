@@ -8,6 +8,23 @@ import {
   MATERIAL_UNITS,
   type MaterialItem,
 } from '@/hooks/useMaterial'
+import { supabase } from '@/lib/supabase'
+
+/* ── Types ────────────────────────────────────────── */
+
+interface MaterialOrderRow {
+  id: string
+  project_id: string
+  material_name: string
+  qty: number
+  unit: string
+  urgency: string
+  expected_date: string | null
+  requester_id: string
+  status: string
+  note: string | null
+  created_at: string
+}
 
 /* ── Helpers ───────────────────────────────────────── */
 
@@ -64,13 +81,117 @@ export default function MaterialPage() {
   const [tPrice, setTPrice] = useState('')
   const [tNote, setTNote] = useState('')
 
+  // Order form state
+  const [orders, setOrders] = useState<MaterialOrderRow[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const [oMaterial, setOMaterial] = useState('')
+  const [oQty, setOQty] = useState('')
+  const [oUnit, setOUnit] = useState('kg')
+  const [oUrgency, setOUrgency] = useState('normal')
+  const [oExpDate, setOExpDate] = useState(today())
+  const [oNote, setONote] = useState('')
+
+  /* ── Load orders ─── */
+  const loadOrders = useCallback(async () => {
+    if (!user || !currentProject) return
+    setOrdersLoading(true)
+    try {
+      const { data, error: err } = await supabase
+        .from('material_orders')
+        .select('*')
+        .eq('project_id', currentProject)
+        .order('created_at', { ascending: false })
+        .limit(100)
+
+      if (err) throw err
+      setOrders((data as MaterialOrderRow[]) ?? [])
+    } catch {
+      // table may not exist yet, silent
+      setOrders([])
+    } finally {
+      setOrdersLoading(false)
+    }
+  }, [user, currentProject])
+
+  /* ── Submit order ─── */
+  const handleSubmitOrder = useCallback(async () => {
+    if (!user || !currentProject) return
+    if (!oMaterial) {
+      toast('err', 'Chon vat tu / 자재를 선택하세요')
+      return
+    }
+    const qty = parseFloat(oQty) || 0
+    if (qty <= 0) {
+      toast('err', 'Nhap so luong / 수량을 입력하세요')
+      return
+    }
+    setSaving(true)
+    try {
+      const materialItem = inventory.find((i) => i.id === oMaterial)
+      const insertData: Record<string, unknown> = {
+        project_id: currentProject,
+        material_name: materialItem?.name || oMaterial,
+        qty,
+        unit: oUnit,
+        urgency: oUrgency,
+        expected_date: oExpDate || null,
+        requester_id: user.id,
+        status: 'pending',
+        note: oNote.trim() || null,
+      }
+
+      let { error: err } = await supabase
+        .from('material_orders')
+        .insert(insertData)
+
+      // Fallback: remove optional columns
+      if (err?.message?.includes('column') || err?.message?.includes('does not exist')) {
+        delete insertData.urgency
+        delete insertData.expected_date
+        ;({ error: err } = await supabase.from('material_orders').insert(insertData))
+      }
+
+      if (err) throw err
+
+      setOQty('')
+      setONote('')
+      toast('ok', 'Da gui yeu cau dat hang / 발주 요청 완료')
+      await loadOrders()
+    } catch (e) {
+      toast('err', e instanceof Error ? e.message : 'Dat hang that bai / 발주 실패')
+    } finally {
+      setSaving(false)
+    }
+  }, [user, currentProject, oMaterial, oQty, oUnit, oUrgency, oExpDate, oNote, inventory, toast, loadOrders])
+
+  /* ── Update order status ─── */
+  const handleUpdateOrderStatus = useCallback(async (orderId: string, newStatus: string) => {
+    if (!user) return
+    setSaving(true)
+    try {
+      const { error: err } = await supabase
+        .from('material_orders')
+        .update({ status: newStatus })
+        .eq('id', orderId)
+
+      if (err) throw err
+      toast('ok', `Trang thai: ${newStatus} / 상태 변경: ${newStatus}`)
+      await loadOrders()
+    } catch (e) {
+      toast('err', e instanceof Error ? e.message : 'Cap nhat that bai / 상태 변경 실패')
+    } finally {
+      setSaving(false)
+    }
+  }, [user, toast, loadOrders])
+
   /* ── Load data ─── */
   useEffect(() => {
     if (user && currentProject) {
       loadInventory()
       loadTransactions()
+      loadOrders()
     }
-  }, [user, currentProject, loadInventory, loadTransactions])
+  }, [user, currentProject, loadInventory, loadTransactions, loadOrders])
 
   /* ── Toast ─── */
   const toast = useCallback((type: 'ok' | 'err', text: string) => {
@@ -579,39 +700,236 @@ export default function MaterialPage() {
 
         {/* ── Orders Tab ── */}
         {tab === 'orders' && (
-          <div className="p-8 text-center text-sm text-gray-400">
-            <p className="text-lg font-medium text-gray-500 mb-2">
-              Chuc nang dat hang / 발주 기능
-            </p>
-            <p>Dang phat trien / 개발 중...</p>
-            <div className="mt-6 max-w-md mx-auto">
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-left">
-                <h4 className="text-xs font-semibold text-blue-800 mb-2">
-                  Vat tu can dat hang / 발주 필요 자재
-                </h4>
-                {inventory
-                  .filter((i) => i.current_stock < i.min_stock)
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between py-1.5 border-b border-blue-100 last:border-0"
-                    >
-                      <span className="text-xs font-medium text-blue-900">
-                        {item.name}
-                      </span>
-                      <span className="text-xs text-red-600 font-mono">
-                        {item.current_stock} / {item.min_stock} {item.unit}
-                      </span>
-                    </div>
-                  ))}
-                {inventory.filter((i) => i.current_stock < i.min_stock)
-                  .length === 0 && (
-                  <p className="text-xs text-blue-600">
-                    Du ton kho / 재고 충분
-                  </p>
-                )}
+          <div>
+            {/* Order request form */}
+            <div className="p-4 border-b border-gray-100">
+              <h4 className="text-xs font-semibold text-gray-700 mb-3">
+                Yeu cau dat hang / 발주 요청
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Vat tu / 자재
+                  </label>
+                  <select
+                    value={oMaterial}
+                    onChange={(e) => setOMaterial(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">-- Chon vat tu / 자재 선택 --</option>
+                    {inventory.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} ({item.unit})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    So luong / 수량
+                  </label>
+                  <input
+                    type="number"
+                    value={oQty}
+                    onChange={(e) => setOQty(e.target.value)}
+                    placeholder="0"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Don vi / 단위
+                  </label>
+                  <select
+                    value={oUnit}
+                    onChange={(e) => setOUnit(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {MATERIAL_UNITS.map((u) => (
+                      <option key={u.value} value={u.value}>
+                        {u.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Muc do / 긴급도
+                  </label>
+                  <select
+                    value={oUrgency}
+                    onChange={(e) => setOUrgency(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="normal">Binh thuong / 일반</option>
+                    <option value="urgent">Khan cap / 긴급</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Ngay du kien / 희망 납기
+                  </label>
+                  <input
+                    type="date"
+                    value={oExpDate}
+                    onChange={(e) => setOExpDate(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Ghi chu / 비고
+                  </label>
+                  <input
+                    type="text"
+                    value={oNote}
+                    onChange={(e) => setONote(e.target.value)}
+                    placeholder="Ghi chu them"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex items-end sm:col-span-2">
+                  <button
+                    onClick={handleSubmitOrder}
+                    disabled={saving}
+                    className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  >
+                    {saving ? '...' : 'Gui yeu cau / 발주 요청'}
+                  </button>
+                </div>
               </div>
             </div>
+
+            {/* Low stock items */}
+            {inventory.filter((i) => i.current_stock < i.min_stock).length > 0 && (
+              <div className="p-4 border-b border-gray-100">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <h4 className="text-xs font-semibold text-blue-800 mb-2">
+                    Vat tu can dat hang / 발주 필요 자재
+                  </h4>
+                  {inventory
+                    .filter((i) => i.current_stock < i.min_stock)
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between py-1.5 border-b border-blue-100 last:border-0"
+                      >
+                        <span className="text-xs font-medium text-blue-900">
+                          {item.name}
+                        </span>
+                        <span className="text-xs text-red-600 font-mono">
+                          {item.current_stock} / {item.min_stock} {item.unit}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Orders list */}
+            {ordersLoading ? (
+              <div className="p-8 text-center text-sm text-gray-400">
+                Dang tai... / 로딩 중...
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="p-8 text-center text-sm text-gray-400">
+                Chua co yeu cau dat hang / 발주 요청 없음
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 py-3">Ngay / 날짜</th>
+                      <th className="px-3 py-3">Vat tu / 자재</th>
+                      <th className="px-3 py-3 text-right">SL / 수량</th>
+                      <th className="px-3 py-3">Don vi / 단위</th>
+                      <th className="px-3 py-3">Muc do / 긴급</th>
+                      <th className="px-3 py-3">Ngay du kien / 납기</th>
+                      <th className="px-3 py-3">Trang thai / 상태</th>
+                      <th className="px-3 py-3">Ghi chu / 비고</th>
+                      {canManage && <th className="px-3 py-3 text-center">Thao tac / 관리</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {orders.map((order) => (
+                      <tr key={order.id} className="hover:bg-gray-50">
+                        <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">
+                          {order.created_at?.slice(0, 10) || '-'}
+                        </td>
+                        <td className="px-3 py-3 text-xs font-medium text-gray-900">
+                          {order.material_name}
+                        </td>
+                        <td className="px-3 py-3 text-xs text-right font-mono font-bold text-gray-900">
+                          {order.qty}
+                        </td>
+                        <td className="px-3 py-3 text-xs text-gray-600">
+                          {order.unit}
+                        </td>
+                        <td className="px-3 py-3">
+                          <span
+                            className={`inline-block text-xs font-semibold px-2 py-0.5 rounded ${
+                              order.urgency === 'urgent'
+                                ? 'bg-red-50 text-red-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {order.urgency === 'urgent' ? 'Khan cap / 긴급' : 'Binh thuong / 일반'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">
+                          {order.expected_date || '-'}
+                        </td>
+                        <td className="px-3 py-3">
+                          <span
+                            className={`inline-block text-xs font-semibold px-2 py-0.5 rounded ${
+                              order.status === 'delivered'
+                                ? 'bg-green-50 text-green-700'
+                                : order.status === 'approved'
+                                  ? 'bg-blue-50 text-blue-700'
+                                  : 'bg-yellow-50 text-yellow-700'
+                            }`}
+                          >
+                            {order.status === 'delivered'
+                              ? 'Da nhan / 납품완료'
+                              : order.status === 'approved'
+                                ? 'Da duyet / 승인'
+                                : 'Cho duyet / 대기'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-xs text-gray-500 max-w-[150px] truncate">
+                          {order.note || '-'}
+                        </td>
+                        {canManage && (
+                          <td className="px-3 py-3 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1">
+                              {order.status === 'pending' && (
+                                <button
+                                  onClick={() => handleUpdateOrderStatus(order.id, 'approved')}
+                                  disabled={saving}
+                                  className="px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                >
+                                  Duyet / 승인
+                                </button>
+                              )}
+                              {order.status === 'approved' && (
+                                <button
+                                  onClick={() => handleUpdateOrderStatus(order.id, 'delivered')}
+                                  disabled={saving}
+                                  className="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                                >
+                                  Nhan hang / 납품
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
