@@ -91,6 +91,12 @@ export default function MaterialPage() {
   const [oExpDate, setOExpDate] = useState(today())
   const [oNote, setONote] = useState('')
 
+  /* ── Toast ─── */
+  const toast = useCallback((type: 'ok' | 'err', text: string) => {
+    setMsg({ type, text })
+    setTimeout(() => setMsg(null), 4000)
+  }, [])
+
   /* ── Load orders ─── */
   const loadOrders = useCallback(async () => {
     if (!user || !currentProject) return
@@ -192,12 +198,6 @@ export default function MaterialPage() {
       loadOrders()
     }
   }, [user, currentProject, loadInventory, loadTransactions, loadOrders])
-
-  /* ── Toast ─── */
-  const toast = useCallback((type: 'ok' | 'err', text: string) => {
-    setMsg({ type, text })
-    setTimeout(() => setMsg(null), 4000)
-  }, [])
 
   /* ── Add item ─── */
   async function handleAddItem() {
