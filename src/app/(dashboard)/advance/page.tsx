@@ -583,6 +583,13 @@ export default function AdvancePage() {
                         toast('err', e.message),
                       )
                     }
+                    onCreateExpense={(req) => {
+                      setTab('usage')
+                      setUAmount(String(req.amount))
+                      setUCat(req.purpose || '기타')
+                      setUDetail(`TU #${req.id.slice(0,8)} — ${req.reason || req.purpose || ''}`)
+                      toast('ok', 'Da dien thong tin tam ung / 전도금 정보가 자동 채워졌습니다')
+                    }}
                   />
                 ))}
               </tbody>
@@ -682,11 +689,13 @@ function ReqRow({
   canApprove,
   onApprove,
   onReject,
+  onCreateExpense,
 }: {
   item: AdvanceRequest
   canApprove: boolean
   onApprove: () => void
   onReject: () => void
+  onCreateExpense?: (r: AdvanceRequest) => void
 }) {
   const st = REQ_STATUS_STYLES[item.status] ?? REQ_STATUS_STYLES['대기']
   const isPending = item.status === '대기'
@@ -734,6 +743,14 @@ function ReqRow({
                 Tu choi / 거절
               </button>
             </div>
+          ) : (item.status === '승인' || item.status === '입금완료') ? (
+            <button
+              onClick={() => onCreateExpense?.(item)}
+              className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              title="Tao phieu chi tu tam ung nay / 이 전도금으로 지출 기록"
+            >
+              💰 Chi tien / 지출
+            </button>
           ) : (
             <span className="text-gray-300">&mdash;</span>
           )}
