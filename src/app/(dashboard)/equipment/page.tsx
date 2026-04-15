@@ -599,12 +599,18 @@ export default function EquipmentPage() {
                               Nghi / 대기
                             </button>
                           )}
-                          <button
-                            onClick={() => openRepairPanel(eq.id)}
-                            className="px-2 py-1 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                          >
-                            Sua chua / 수리
-                          </button>
+                          {eq.status !== 'repair' && (
+                            <button
+                              onClick={() => {
+                                updateEquipment(eq.id, { status: 'repair' })
+                                  .then(() => toast('ok', 'Da chuyen sang sua chua / 수리중으로 변경'))
+                                  .catch((err) => toast('err', err.message))
+                              }}
+                              className="px-2 py-1 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                            >
+                              Sua chua / 수리
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
