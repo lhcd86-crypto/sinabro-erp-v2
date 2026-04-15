@@ -65,11 +65,32 @@ export default function AttendancePage() {
 
   /* ── GPS acquire ── */
   const acquireGPS = async (): Promise<GPSCoords | null> => {
+    const needGPS = user && isGPSRequired(user.role)
+
+    // 현장 직원은 GPS 필수 — 먼저 권한 확인
+    if (needGPS && navigator.permissions) {
+      try {
+        const perm = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
+        if (perm.state === 'denied') {
+          throw new Error(
+            'Vui long cho phep vi tri trong cai dat trinh duyet / ' +
+            '브라우저 설정에서 위치 권한을 허용해주세요'
+          )
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message.includes('cho phep')) throw e
+      }
+    }
+
     try {
-      return await getCurrentPosition()
+      const pos = await getCurrentPosition()
+      return pos
     } catch {
-      if (user && isGPSRequired(user.role)) {
-        throw new Error('Vui long bat vi tri (GPS) / 위치 정보를 켜주세요')
+      if (needGPS) {
+        throw new Error(
+          'Bat vi tri (GPS) de cham cong. Vao ca khong duoc neu khong co GPS / ' +
+          'GPS를 켜야 출근할 수 있습니다. 위치 정보 없이 출근 불가'
+        )
       }
       return null
     }
