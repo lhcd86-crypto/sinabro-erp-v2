@@ -532,7 +532,12 @@ export default function EquipmentPage() {
                     <tr key={eq.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2">
                         {eq.photo_url ? (
-                          <img src={eq.photo_url} alt={eq.name} className="w-10 h-10 object-cover rounded border" />
+                          <img
+                            src={eq.photo_url.startsWith('http') ? eq.photo_url : `https://ltfjjwktqefchlshblve.supabase.co/storage/v1/object/public/report-photos/${eq.photo_url}`}
+                            alt={eq.name}
+                            className="w-10 h-10 object-cover rounded border"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
                         ) : (
                           <div className="w-10 h-10 bg-gray-100 rounded border flex items-center justify-center text-gray-400 text-xs">-</div>
                         )}
