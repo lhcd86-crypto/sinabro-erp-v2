@@ -118,9 +118,11 @@ export const MENUS: MenuMap = {
   account: [
     { id: 'home', icon: '🏠', label: 'Trang chủ / 홈' },
     { id: 'multi_site', icon: '🌐', label: 'Tất cả CT / 전체 현장' },
-    { cat: '급여·인사 / Lương·NS' },
+    { cat: '근태 / Chấm công' },
+    { id: 'attendance', icon: '⏰', label: 'Chấm công / 출퇴근' },
+    { id: 'leave', icon: '🏖️', label: 'Nghỉ phép / 휴가' },
+    { cat: '급여 / Lương' },
     { id: 'salary', icon: '💰', label: 'Bảng lương / 급여' },
-    { id: 'leave_all', icon: '🏖️', label: 'Nghỉ phép / 휴가' },
     { cat: '자재·장비 / Vật tư' },
     { id: 'equipment', icon: '🚜', label: 'Thiết bị / 장비·공구' },
     { id: 'material', icon: '📦', label: 'Vật tư / 자재관리' },
