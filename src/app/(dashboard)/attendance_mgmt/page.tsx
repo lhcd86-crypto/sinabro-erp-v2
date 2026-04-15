@@ -92,33 +92,35 @@ export default function AttendanceMgmtPage() {
     if (!currentProject) return
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('employee_attendance')
-        .select(`
-          id,
-          user_id,
-          date,
-          check_in,
-          check_out,
-          status,
-          users!employee_attendance_user_id_fkey ( name, role )
-        `)
-        .eq('date', selectedDate)
-        .eq('project_id', currentProject)
-        .order('check_in', { ascending: true })
+      // Load attendance + users separately (no FK join)
+      const [{ data: attData, error }, { data: usersData }] = await Promise.all([
+        supabase
+          .from('employee_attendance')
+          .select('*')
+          .eq('work_date', selectedDate)
+          .eq('project_id', currentProject)
+          .order('check_in', { ascending: true }),
+        supabase
+          .from('users')
+          .select('id, name, role')
+      ])
 
       if (error) throw error
 
+      const userMap = new Map<string, { name: string; role: string }>()
+      ;(usersData ?? []).forEach((u: { id: string; name: string; role: string }) => userMap.set(u.id, u))
+
+      const data = attData
       const mapped: AttendanceRow[] = (data ?? []).map((r: Record<string, unknown>) => {
-        const u = r.users as Record<string, unknown> | null
-        return {
+          const u = userMap.get(r.user_id as string)
+          return {
           id: r.id as string,
           user_id: r.user_id as string,
-          date: r.date as string,
+          date: (r.work_date as string) ?? '',
           check_in: r.check_in as string | null,
           check_out: r.check_out as string | null,
-          status: r.status as string,
-          user_name: (u?.name as string) ?? '(unknown)',
+          status: r.check_out ? 'completed' : r.check_in ? 'working' : 'absent',
+          user_name: u?.name ?? '(unknown)',
           user_role: (u?.role as Role) ?? 'engineer',
         }
       })
