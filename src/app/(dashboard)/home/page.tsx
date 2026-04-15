@@ -137,7 +137,7 @@ export default function DashboardPage() {
           .eq('status', 'pending'),
         // Today's attendance
         supabase
-          .from('attendance')
+          .from('employee_attendance')
           .select('id', { count: 'exact', head: true })
           .eq('project_id', currentProject)
           .eq('work_date', today),
@@ -149,10 +149,10 @@ export default function DashboardPage() {
           .eq('date', today),
         // Today's safety checks
         supabase
-          .from('safety_checks')
+          .from('safety_inspections')
           .select('id', { count: 'exact', head: true })
           .eq('project_id', currentProject)
-          .eq('check_date', today),
+          .eq('inspection_date', today),
       ])
 
       setCounts({
