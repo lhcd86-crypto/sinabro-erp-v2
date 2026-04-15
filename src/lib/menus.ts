@@ -175,6 +175,7 @@ export const MENUS: MenuMap = {
     { id: 'dashboard_all', icon: '🏛️', label: 'Tổng quan / 대시보드' },
     { id: 'site_calendar', icon: '🗓️', label: 'Lịch trình / 일정관리' },
     { cat: '인력관리 / Nhân sự' },
+    { id: 'workers', icon: '👷', label: 'Ho so CN / 인력 마스터' },
     { id: 'staff_all', icon: '👥', label: 'Nhân sự / 인력관리' },
     { id: 'roll_call', icon: '✅', label: 'Điểm danh / 출석체크' },
     { cat: '자재·장비 / Vật tư' },
