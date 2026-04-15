@@ -81,6 +81,11 @@ export default function AdvancePage() {
   const [uReceipt, setUReceipt] = useState('없음')
   const [uFile, setUFile] = useState<File | null>(null)
 
+  // History filters
+  const [filterUser, setFilterUser] = useState('')
+  const [filterDateFrom, setFilterDateFrom] = useState('')
+  const [filterDateTo, setFilterDateTo] = useState('')
+
   // Request form state
   const [rAmount, setRAmount] = useState('')
   const [rDate, setRDate] = useState(today())
@@ -483,13 +488,56 @@ export default function AdvancePage() {
 
       {/* ── Usage History Table ── */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">
-            Lich su su dung / 사용 내역
-          </h3>
-          <span className="text-xs text-gray-500">
-            Tong / 총 {advances.length}건
-          </span>
+        <div className="px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-900">
+              Lich su su dung / 사용 내역
+            </h3>
+            <span className="text-xs text-gray-500">
+              Hien thi / 표시: {(() => {
+                let filtered = advances
+                if (filterUser) filtered = filtered.filter(a => a.requester_name === filterUser || a.user_id === filterUser)
+                if (filterDateFrom) filtered = filtered.filter(a => (a.request_date || a.created_at?.slice(0,10) || '') >= filterDateFrom)
+                if (filterDateTo) filtered = filtered.filter(a => (a.request_date || a.created_at?.slice(0,10) || '') <= filterDateTo)
+                return filtered.length
+              })()}/{advances.length}건
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={filterUser}
+              onChange={(e) => setFilterUser(e.target.value)}
+              className="px-2 py-1 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Tat ca / 전체 직원</option>
+              {[...new Set(advances.map(a => a.requester_name).filter(Boolean))].map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              className="px-2 py-1 border border-gray-300 rounded-lg text-xs"
+              placeholder="Tu / 시작일"
+            />
+            <span className="text-xs text-gray-400">~</span>
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              className="px-2 py-1 border border-gray-300 rounded-lg text-xs"
+              placeholder="Den / 종료일"
+            />
+            {(filterUser || filterDateFrom || filterDateTo) && (
+              <button
+                onClick={() => { setFilterUser(''); setFilterDateFrom(''); setFilterDateTo('') }}
+                className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg"
+              >
+                Xoa bo loc / 초기화
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -519,7 +567,11 @@ export default function AdvancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {advances.map((a) => (
+                {advances
+                  .filter(a => !filterUser || a.requester_name === filterUser || a.user_id === filterUser)
+                  .filter(a => !filterDateFrom || (a.request_date || a.created_at?.slice(0,10) || '') >= filterDateFrom)
+                  .filter(a => !filterDateTo || (a.request_date || a.created_at?.slice(0,10) || '') <= filterDateTo)
+                  .map((a) => (
                   <AdvRow
                     key={a.id}
                     item={a}
