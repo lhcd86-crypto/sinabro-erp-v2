@@ -12,7 +12,7 @@ interface LaborContract {
   project_id: string
   worker_id: string | null
   worker_name: string
-  contract_type: string
+  position: string
   start_date: string
   end_date: string | null
   base_salary: number | null
@@ -122,7 +122,7 @@ export default function ContractsPage() {
   const openEdit = (c: LaborContract) => {
     setEditing(c)
     setMWorkerId(c.worker_id ?? ''); setMWorkerName(c.worker_name)
-    setMType(c.contract_type); setMStart(c.start_date); setMEnd(c.end_date ?? '')
+    setMType(c.position); setMStart(c.start_date); setMEnd(c.end_date ?? '')
     setMSalary(c.base_salary ? String(c.base_salary) : ''); setMPosition(c.position ?? '')
     setMNotes(c.notes ?? '')
     setShowModal(true)
@@ -145,7 +145,7 @@ export default function ContractsPage() {
         project_id: currentProject,
         worker_id: mWorkerId || null,
         worker_name: mWorkerName.trim(),
-        contract_type: mType,
+        position: mType,
         start_date: mStart,
         end_date: mEnd || null,
         base_salary: parseFloat(mSalary) || null,
@@ -256,7 +256,7 @@ export default function ContractsPage() {
                 return (
                   <tr key={c.id} className={`hover:bg-gray-50 ${rowHighlight}`}>
                     <td className="px-5 py-2 text-gray-900 font-medium whitespace-nowrap">{c.worker_name}</td>
-                    <td className="px-3 py-2 text-xs whitespace-nowrap">{typeLabel(c.contract_type)}</td>
+                    <td className="px-3 py-2 text-xs whitespace-nowrap">{typeLabel(c.position)}</td>
                     <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{c.position ?? '-'}</td>
                     <td className="px-3 py-2 text-gray-700 whitespace-nowrap font-mono">{c.start_date}</td>
                     <td className="px-3 py-2 text-gray-700 whitespace-nowrap font-mono">{c.end_date ?? '-'}</td>

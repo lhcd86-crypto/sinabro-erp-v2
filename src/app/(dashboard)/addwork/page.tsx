@@ -19,9 +19,9 @@ interface AdditionalWork {
   unit: string | null
   unit_price: number | null
   notes: string | null
-  photo_urls: string[]
+  photos: string[]
   status: string
-  created_by: string
+  user_id: string
   created_at: string
 }
 
@@ -165,9 +165,9 @@ export default function AddWorkPage() {
         unit: fUnit || null,
         unit_price: parseFloat(fUnitPrice) || null,
         notes: fNotes.trim() || null,
-        photo_urls: photoUrls,
+        photos: photoUrls,
         status: 'pending',
-        created_by: user.id,
+        user_id: user.id,
       })
       if (error) throw error
 
