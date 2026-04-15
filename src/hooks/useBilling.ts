@@ -25,8 +25,10 @@ export interface PrepaymentRecord {
   id: string
   project_id: string
   amount: number
-  received_date: string
-  remaining: number
+  recv_date: string
+  deducted: number
+  description: string | null
+  status: string | null
   note: string | null
   created_at: string
 }
@@ -201,7 +203,7 @@ export function useBilling() {
       let query = supabase
         .from('prepayments')
         .select('*')
-        .order('received_date', { ascending: false })
+        .order('recv_date', { ascending: false })
         .limit(100)
 
       if (currentProject) query = query.eq('project_id', currentProject)

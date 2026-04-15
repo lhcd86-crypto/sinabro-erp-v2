@@ -165,7 +165,7 @@ export default function BillingPage() {
     .filter((b) => !['paid', 'rejected'].includes(b.status))
     .reduce((s, b) => s + (b.amount || 0), 0)
   const totalPrepayment = prepayments.reduce(
-    (s, p) => s + (p.remaining || 0),
+    (s, p) => s + (((p.amount||0)-(p.deducted||0)) || 0),
     0,
   )
 
@@ -377,13 +377,13 @@ export default function BillingPage() {
                 {prepayments.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50">
                     <td className="px-3 py-3 text-xs text-gray-600 font-mono">
-                      {p.received_date}
+                      {p.recv_date}
                     </td>
                     <td className="px-3 py-3 text-xs text-right font-mono font-bold text-gray-900">
                       {fmtVND(p.amount)}
                     </td>
                     <td className="px-3 py-3 text-xs text-right font-mono font-bold text-purple-700">
-                      {fmtVND(p.remaining)}
+                      {fmtVND(((p.amount||0)-(p.deducted||0)))}
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-500">
                       {p.note || '-'}
