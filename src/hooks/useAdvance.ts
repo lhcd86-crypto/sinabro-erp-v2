@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
+import { isAdmin } from '@/lib/roles'
 
 /* ── Types ─────────────────────────────────────────── */
 
@@ -72,6 +73,8 @@ export function useAdvance() {
         .limit(200)
 
       if (currentProject) query = query.eq('project_id', currentProject)
+      // 일반 직원은 본인 것만, 관리자는 전체
+      if (!isAdmin(user.role)) query = query.eq('user_id', user.id)
 
       const { data, error: err } = await query
       if (err) throw new Error(err.message)
