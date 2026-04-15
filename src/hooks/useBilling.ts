@@ -106,8 +106,8 @@ export function useBilling() {
       const insertData: Record<string, unknown> = {
         project_id: currentProject,
         billing_date: rec.billing_date,
-        description: rec.description,
-        amount: rec.amount,
+        note: rec.description,
+        claim_amount: rec.amount,
         contract_item: rec.contract_item || null,
         prepayment_deduction: deduction,
         net_amount: netAmount,
