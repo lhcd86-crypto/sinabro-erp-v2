@@ -8,13 +8,14 @@ import { supabase } from '@/lib/supabase'
 
 interface AuditLog {
   id: string
-  user_id: string | null
+  changed_by: string | null
+  changed_by_name: string | null
   action: string
   table_name: string | null
   record_id: string | null
-  details: string | null
+  changes: Record<string, unknown> | null
+  prev_values: Record<string, unknown> | null
   created_at: string
-  users?: { name: string } | null
 }
 
 const PAGE_SIZE = 50
@@ -82,7 +83,7 @@ export default function HistoryPage() {
     try {
       let query = supabase
         .from('audit_logs')
-        .select('id, user_id, action, table_name, record_id, details, created_at, users(name)')
+        .select('id, changed_by, changed_by_name, action, table_name, record_id, changes, created_at')
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE)
 
@@ -94,7 +95,7 @@ export default function HistoryPage() {
       if (filterDateFrom) query = query.gte('created_at', filterDateFrom + 'T00:00:00')
       if (filterDateTo) query = query.lte('created_at', filterDateTo + 'T23:59:59')
       if (filterAction) query = query.ilike('action', `%${filterAction}%`)
-      if (filterUser) query = query.eq('user_id', filterUser)
+      if (filterUser) query = query.eq('changed_by', filterUser)
 
       const { data, error } = await query
       if (error) throw error
@@ -249,7 +250,7 @@ export default function HistoryPage() {
                       {log.created_at ? new Date(log.created_at).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-700 whitespace-nowrap">
-                      {log.users?.name ?? '-'}
+                      {log.changed_by_name ?? '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded ${actionColor(log.action)}`}>
@@ -260,7 +261,7 @@ export default function HistoryPage() {
                       {log.table_name ?? '-'}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600 max-w-[300px] truncate">
-                      {log.details ?? '-'}
+                      {JSON.stringify(log.changes ?? {}).slice(0,100) ?? '-'}
                     </td>
                   </tr>
                 ))}
