@@ -14,9 +14,13 @@ function todayStr(): string {
 }
 
 const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
+  '대기':    { bg: 'bg-yellow-50', text: 'text-yellow-700', label: 'Cho duyet / 대기' },
   pending:  { bg: 'bg-yellow-50', text: 'text-yellow-700', label: 'Cho duyet / 대기' },
+  '승인':   { bg: 'bg-green-50',  text: 'text-green-700',  label: 'Da duyet / 승인' },
   approved: { bg: 'bg-green-50',  text: 'text-green-700',  label: 'Da duyet / 승인' },
+  '반려':    { bg: 'bg-red-50',    text: 'text-red-700',    label: 'Tu choi / 반려' },
   rejected: { bg: 'bg-red-50',    text: 'text-red-700',    label: 'Tu choi / 반려' },
+  '취소':    { bg: 'bg-gray-50',   text: 'text-gray-500',   label: 'Da huy / 취소' },
 }
 
 /* ── Component ── */
@@ -240,7 +244,7 @@ export default function LeavePage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{rec.days}</td>
+                    <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{rec.leave_days ?? 1}</td>
                     <td className="px-3 py-2 text-gray-600 text-xs max-w-[200px] truncate">{rec.reason ?? '-'}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${st.bg} ${st.text}`}>
