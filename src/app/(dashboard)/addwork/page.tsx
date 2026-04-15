@@ -164,7 +164,7 @@ export default function AddWorkPage() {
         quantity: parseFloat(fQuantity) || null,
         unit: fUnit || null,
         unit_price: parseFloat(fUnitPrice) || null,
-        notes: fNotes.trim() || null,
+        note: fNotes.trim() || null,
         photos: photoUrls,
         status: 'pending',
         user_id: user.id,
