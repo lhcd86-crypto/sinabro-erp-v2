@@ -57,8 +57,9 @@ function today() {
   return new Date().toISOString().slice(0, 10)
 }
 
-function fmtVND(n: number) {
-  return n.toLocaleString('vi-VN')
+function fmtVND(n: number | null | undefined) {
+  if (n == null || isNaN(Number(n))) return '0'
+  return Number(n).toLocaleString('vi-VN')
 }
 
 /* ── Component ─────────────────────────────────────── */

@@ -8,8 +8,10 @@ export interface BillingRecord {
   id: string
   project_id: string
   billing_date: string
-  description: string
-  amount: number
+  billing_no: string | null
+  claim_amount: number
+  received_amount: number
+  amount: number // alias
   contract_item: string | null
   status: string
   prepayment_deduction: number | null
