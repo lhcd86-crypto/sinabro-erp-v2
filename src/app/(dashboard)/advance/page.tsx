@@ -344,10 +344,10 @@ export default function AdvancePage() {
                   <input
                     type="text"
                     inputMode="numeric"
-                    value={uAmount}
-                    onChange={(e) => setUAmount(e.target.value)}
+                    value={uAmount ? Number(uAmount.replace(/[^0-9]/g, '')).toLocaleString('vi-VN') : ''}
+                    onChange={(e) => setUAmount(e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="0"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
@@ -419,10 +419,10 @@ export default function AdvancePage() {
                   <input
                     type="text"
                     inputMode="numeric"
-                    value={rAmount}
-                    onChange={(e) => setRAmount(e.target.value)}
+                    value={rAmount ? Number(rAmount.replace(/[^0-9]/g, '')).toLocaleString('vi-VN') : ''}
+                    onChange={(e) => setRAmount(e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="0"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
