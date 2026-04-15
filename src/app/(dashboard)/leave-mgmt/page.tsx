@@ -14,9 +14,13 @@ function thisYearMonth(): string {
 }
 
 const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
+  '대기':  { bg: 'bg-yellow-50', text: 'text-yellow-700', label: 'Cho duyet / 대기' },
   pending:  { bg: 'bg-yellow-50', text: 'text-yellow-700', label: 'Cho duyet / 대기' },
+  '승인': { bg: 'bg-green-50',  text: 'text-green-700',  label: 'Da duyet / 승인' },
   approved: { bg: 'bg-green-50',  text: 'text-green-700',  label: 'Da duyet / 승인' },
+  '반려':  { bg: 'bg-red-50',    text: 'text-red-700',    label: 'Tu choi / 반려' },
   rejected: { bg: 'bg-red-50',    text: 'text-red-700',    label: 'Tu choi / 반려' },
+  '취소':  { bg: 'bg-gray-50',   text: 'text-gray-500',   label: 'Da huy / 취소' },
 }
 
 function calcTenure(hireDate: string): string {
@@ -45,7 +49,7 @@ export default function LeaveMgmtPage() {
     updateBalance,
   } = useLeave()
 
-  const [statusFilter, setStatusFilter] = useState('pending')
+  const [statusFilter, setStatusFilter] = useState('대기')
   const [monthFilter, setMonthFilter] = useState(thisYearMonth())
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
@@ -275,9 +279,9 @@ export default function LeaveMgmtPage() {
               className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">Tat ca / 전체</option>
-              <option value="pending">Cho duyet / 대기</option>
-              <option value="approved">Da duyet / 승인</option>
-              <option value="rejected">Tu choi / 반려</option>
+              <option value="대기">Cho duyet / 대기</option>
+              <option value="승인">Da duyet / 승인</option>
+              <option value="반려">Tu choi / 반려</option>
             </select>
             <input
               type="month"
