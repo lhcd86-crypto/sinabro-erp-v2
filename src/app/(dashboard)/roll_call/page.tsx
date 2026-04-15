@@ -164,21 +164,40 @@ export default function RollCallPage() {
         photoUrls = await uploadPhotos(fPhotos)
       }
 
-      const { error } = await supabase.from('workforce_photos').insert({
+      const direct = parseInt(fDirect) || 0
+      const indirect = parseInt(fIndirect) || 0
+      const vnTech = parseInt(fVnTech) || 0
+
+      const insertData: Record<string, unknown> = {
         project_id: currentProject,
         photo_date: fDate,
         slot: fSlot,
-        worker_ids: Array.from(selectedWorkers),
-        manual_counts: {
-          direct: parseInt(fDirect) || 0,
-          indirect: parseInt(fIndirect) || 0,
-          vn_tech: parseInt(fVnTech) || 0,
-        },
-        time_records: fTimes,
+        checked_worker_ids: Array.from(selectedWorkers),
+        headcount: direct + indirect + vnTech,
+        time_am_in: fTimes?.am_in || null,
+        time_am_out: fTimes?.am_out || null,
+        time_pm_in: fTimes?.pm_in || null,
+        time_pm_out: fTimes?.pm_out || null,
+        time_ot_in: fTimes?.ot_in || null,
+        time_ot_out: fTimes?.ot_out || null,
         photo_urls: photoUrls,
         memo: fMemo.trim() || null,
         created_by: user.id,
-      })
+      }
+
+      let { error } = await supabase.from('workforce_photos').insert(insertData)
+
+      // Fallback: remove optional columns
+      if (error?.message?.includes('column')) {
+        delete insertData.checked_worker_ids
+        delete insertData.time_am_in
+        delete insertData.time_am_out
+        delete insertData.time_pm_in
+        delete insertData.time_pm_out
+        delete insertData.time_ot_in
+        delete insertData.time_ot_out
+        ;({ error } = await supabase.from('workforce_photos').insert(insertData))
+      }
       if (error) throw error
 
       setSelectedWorkers(new Set())
