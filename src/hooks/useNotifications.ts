@@ -26,10 +26,15 @@ export function useNotifications() {
       const { data } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', user.id)
+        .or(`target_user_id.eq.${user.id},user_id.eq.${user.id}`)
         .order('created_at', { ascending: false })
         .limit(50)
-      const list = (data as Notification[]) ?? []
+      const list = (data ?? []).map((n: Record<string, unknown>) => ({
+        ...n,
+        is_read: n.is_read ?? n.read ?? false,
+        title: n.title ?? '',
+        link: n.link ?? null,
+      })) as Notification[]
       setNotifications(list)
       setUnreadCount(list.filter((n) => !n.is_read).length)
     } catch {
@@ -39,7 +44,7 @@ export function useNotifications() {
 
   const markAsRead = useCallback(
     async (id: string) => {
-      await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+      await supabase.from('notifications').update({ is_read: true, read: true }).eq('id', id)
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       )
@@ -52,8 +57,8 @@ export function useNotifications() {
     if (!user) return
     await supabase
       .from('notifications')
-      .update({ is_read: true })
-      .eq('user_id', user.id)
+      .update({ is_read: true, read: true })
+      .or(`target_user_id.eq.${user.id},user_id.eq.${user.id}`)
       .eq('is_read', false)
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
     setUnreadCount(0)
@@ -76,7 +81,7 @@ export function useNotifications() {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
+          filter: `target_user_id=eq.${user.id}`,
         },
         (payload) => {
           const newNotif = payload.new as Notification
