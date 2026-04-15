@@ -83,12 +83,14 @@ export function useLeave() {
       if (err && err.code !== 'PGRST116') throw err
 
       if (data) {
+        const total = data.total_days ?? data.total ?? 12
+        const used = data.used_days ?? data.used ?? 0
         setBalance({
           id: data.id,
           user_id: data.user_id,
-          total: data.total ?? 12,
-          used: data.used ?? 0,
-          remaining: data.remaining ?? (data.total ?? 12) - (data.used ?? 0),
+          total,
+          used,
+          remaining: total - used,
         })
       } else {
         setBalance({ id: '', user_id: user.id, total: 12, used: 0, remaining: 12 })
@@ -109,7 +111,7 @@ export function useLeave() {
     try {
       const { data, error: err } = await supabase
         .from('leave_requests')
-        .select('*, approver:approved_by(name)')
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
@@ -149,9 +151,9 @@ export function useLeave() {
         start_date: startDate,
         end_date: endDate,
         half_day: halfDay,
-        days,
+        leave_days: days,
         reason,
-        status: 'pending',
+        status: '대기',
       })
 
     if (insErr) throw insErr
@@ -167,7 +169,7 @@ export function useLeave() {
     try {
       let q = supabase
         .from('leave_requests')
-        .select('*, users:user_id(name, role, hire_date), approver:approved_by(name)')
+        .select('*')
         .order('created_at', { ascending: false })
 
       if (status && status !== 'all') {
@@ -227,7 +229,7 @@ export function useLeave() {
     // Update leave balance: increase used, decrease remaining
     const { data: req } = await supabase
       .from('leave_requests')
-      .select('user_id, days')
+      .select('user_id, leave_days')
       .eq('id', leaveId)
       .single()
 
@@ -239,12 +241,10 @@ export function useLeave() {
         .single()
 
       if (bal) {
+        const newUsed = (bal.used_days ?? 0) + (req.leave_days ?? 1)
         await supabase
           .from('leave_balances')
-          .update({
-            used: (bal.used ?? 0) + (req.days ?? 0),
-            remaining: (bal.total ?? 12) - (bal.used ?? 0) - (req.days ?? 0),
-          })
+          .update({ used_days: newUsed })
           .eq('id', bal.id)
       }
     }
@@ -264,20 +264,9 @@ export function useLeave() {
 
   /* ── Update balance (admin adjust) ── */
   const updateBalance = useCallback(async (balanceId: string, newTotal: number) => {
-    const { data: bal } = await supabase
-      .from('leave_balances')
-      .select('used')
-      .eq('id', balanceId)
-      .single()
-
-    const used = bal?.used ?? 0
-
     const { error: err } = await supabase
       .from('leave_balances')
-      .update({
-        total: newTotal,
-        remaining: newTotal - used,
-      })
+      .update({ total_days: newTotal })
       .eq('id', balanceId)
 
     if (err) throw err
