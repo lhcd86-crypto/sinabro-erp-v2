@@ -718,18 +718,28 @@ export default function MaterialPage() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     Vat tu / 자재
                   </label>
-                  <select
-                    value={oMaterial}
-                    onChange={(e) => setOMaterial(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">-- Chon vat tu / 자재 선택 --</option>
-                    {inventory.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name} ({item.unit})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex gap-1">
+                    <select
+                      value={oMaterial}
+                      onChange={(e) => setOMaterial(e.target.value)}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">-- Chon vat tu / 자재 선택 --</option>
+                      {inventory.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name} ({item.unit})
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-xs text-gray-400 self-center px-1">hoac/또는</span>
+                    <input
+                      type="text"
+                      value={inventory.find(i => i.id === oMaterial) ? '' : oMaterial}
+                      onChange={(e) => setOMaterial(e.target.value)}
+                      placeholder="Nhap moi / 직접입력"
+                      className="w-32 border border-gray-300 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
