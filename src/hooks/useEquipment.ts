@@ -171,10 +171,10 @@ export function useEquipment() {
 
       if (tErr) console.warn('Transfer log skipped:', tErr.message)
 
-      // Update equipment project_id
+      // Update equipment project_id + current_project_id
       const { error: err } = await supabase
         .from('equipment_items')
-        .update({ project_id: toProjectId })
+        .update({ project_id: toProjectId, current_project_id: toProjectId })
         .eq('id', equipmentId)
 
       if (err) throw new Error(err.message)
