@@ -532,12 +532,19 @@ export default function EquipmentPage() {
                     <tr key={eq.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2">
                         {eq.photo_url ? (
-                          <img
-                            src={eq.photo_url.startsWith('http') ? eq.photo_url : `https://ltfjjwktqefchlshblve.supabase.co/storage/v1/object/public/report-photos/${eq.photo_url}`}
-                            alt={eq.name}
-                            className="w-10 h-10 object-cover rounded border"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                          />
+                          <a
+                            href={eq.photo_url.startsWith('http') ? eq.photo_url : `https://ltfjjwktqefchlshblve.supabase.co/storage/v1/object/public/report-photos/${eq.photo_url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Xem anh / 사진 보기"
+                          >
+                            <img
+                              src={eq.photo_url.startsWith('http') ? eq.photo_url : `https://ltfjjwktqefchlshblve.supabase.co/storage/v1/object/public/report-photos/${eq.photo_url}`}
+                              alt={eq.name}
+                              className="w-10 h-10 object-cover rounded border cursor-pointer hover:opacity-80 transition"
+                              onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect fill="%23f3f4f6" width="40" height="40"/><text x="50%" y="50%" fill="%239ca3af" font-size="10" text-anchor="middle" dy=".3em">📷</text></svg>' }}
+                            />
+                          </a>
                         ) : (
                           <div className="w-10 h-10 bg-gray-100 rounded border flex items-center justify-center text-gray-400 text-xs">-</div>
                         )}
