@@ -54,29 +54,65 @@ export default function GalleryPage() {
       const [{ data: wf }, { data: sw }, { data: gal }] = await Promise.all([
         supabase
           .from('workforce_photos')
-          .select('id, project_id, photo_url, caption, category, taken_date, uploaded_by, created_at')
+          .select('id, project_id, photo_urls, memo, created_by, created_at')
           .eq('project_id', currentProject)
-          .order('taken_date', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(100),
         supabase
           .from('site_work_photos')
-          .select('id, project_id, photo_url, caption, category, taken_date, uploaded_by, created_at')
+          .select('id, project_id, photo_urls, memo, created_by, created_at')
           .eq('project_id', currentProject)
-          .order('taken_date', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(100),
         supabase
           .from('gallery_photos')
-          .select('id, project_id, photo_url, caption, category, taken_date, uploaded_by, created_at')
+          .select('id, project_id, photo_url, caption, category, created_by, created_at')
           .eq('project_id', currentProject)
-          .order('taken_date', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(100),
       ])
 
+      // Normalize: workforce/site_work have photo_urls array, gallery has single photo_url
+      const wfPhotos = (wf ?? []).flatMap((r: Record<string, unknown>) => {
+        const urls = (r.photo_urls as string[]) ?? []
+        return urls.map((url: string) => ({
+          id: `${r.id}-${url.slice(-8)}`,
+          project_id: r.project_id as string,
+          photo_url: url.startsWith('http') ? url : `https://ltfjjwktqefchlshblve.supabase.co/storage/v1/object/public/report-photos/${url}`,
+          caption: (r.memo as string) || '',
+          category: 'workforce',
+          taken_date: (r.created_at as string) || '',
+          uploaded_by: (r.created_by as string) || '',
+          created_at: (r.created_at as string) || '',
+        }))
+      })
+
+      const swPhotos = (sw ?? []).flatMap((r: Record<string, unknown>) => {
+        const urls = (r.photo_urls as string[]) ?? []
+        return urls.map((url: string) => ({
+          id: `${r.id}-${url.slice(-8)}`,
+          project_id: r.project_id as string,
+          photo_url: url.startsWith('http') ? url : `https://ltfjjwktqefchlshblve.supabase.co/storage/v1/object/public/report-photos/${url}`,
+          caption: (r.memo as string) || '',
+          category: 'site_work',
+          taken_date: (r.created_at as string) || '',
+          uploaded_by: (r.created_by as string) || '',
+          created_at: (r.created_at as string) || '',
+        }))
+      })
+
+      const galPhotos = ((gal as PhotoRecord[]) ?? []).map((r) => ({
+        ...r,
+        photo_url: r.photo_url?.startsWith('http') ? r.photo_url : `https://ltfjjwktqefchlshblve.supabase.co/storage/v1/object/public/report-photos/${r.photo_url}`,
+        taken_date: r.created_at,
+        uploaded_by: r.created_by,
+      }))
+
       const all = [
-        ...((wf as PhotoRecord[]) ?? []),
-        ...((sw as PhotoRecord[]) ?? []),
-        ...((gal as PhotoRecord[]) ?? []),
-      ].sort((a, b) => (b.taken_date ?? b.created_at).localeCompare(a.taken_date ?? a.created_at))
+        ...wfPhotos,
+        ...swPhotos,
+        ...galPhotos,
+      ].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
 
       setPhotos(all)
     } catch {
