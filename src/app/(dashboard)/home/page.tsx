@@ -27,7 +27,7 @@ const ENGINEER_ACTIONS: QuickAction[] = [
 const HR_ACTIONS: QuickAction[] = [
   { label: 'Cham cong / 근태 관리', href: '/attendance_mgmt', icon: '⏰', color: 'bg-blue-50 text-blue-700 border-blue-200' },
   { label: 'Luong / 급여', href: '/salary', icon: '💰', color: 'bg-green-50 text-green-700 border-green-200' },
-  { label: 'Duyet phep / 휴가 승인', href: '/leave-mgmt', icon: '📑', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { label: 'Duyet TU / 전도금 승인', href: '/chongmu', icon: '📝', color: 'bg-amber-50 text-amber-700 border-amber-200' },
   { label: 'Nhan vien / 직원 등록', href: '/staff', icon: '👤', color: 'bg-violet-50 text-violet-700 border-violet-200' },
 ]
 
@@ -41,7 +41,8 @@ const DRIVER_ACTIONS: QuickAction[] = [
 const CEO_ACTIONS: QuickAction[] = [
   { label: 'Vao ca / 출근', href: '/attendance', icon: '⏰', color: 'bg-blue-50 text-blue-700 border-blue-200' },
   { label: 'Dashboard', href: '/dashboard', icon: '📊', color: 'bg-green-50 text-green-700 border-green-200' },
-  { label: 'Da cong truong / 다현장', href: '/multi-site', icon: '🏗️', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { label: 'Duyet phep / 휴가 승인', href: '/leave-mgmt', icon: '🏖️', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { label: 'Da cong truong / 다현장', href: '/multi-site', icon: '🏗️', color: 'bg-violet-50 text-violet-700 border-violet-200' },
   { label: 'Chi phi / 원가 분석', href: '/cost-analysis', icon: '📈', color: 'bg-red-50 text-red-700 border-red-200' },
 ]
 
