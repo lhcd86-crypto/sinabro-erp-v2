@@ -73,8 +73,8 @@ export function useEquipment() {
     setError(null)
     try {
       let query = supabase
-        .from('equipment')
-        .select('*, projects:project_id(code, name)')
+        .from('equipment_items')
+        .select('*')
         .order('name', { ascending: true })
         .limit(500)
 
@@ -103,23 +103,23 @@ export function useEquipment() {
 
       const insertData: Record<string, unknown> = {
         name: rec.name,
-        code: rec.code,
+        product_code: rec.code || null,
         category: rec.category,
         status: rec.status,
         project_id: currentProject,
         note: rec.note || null,
-        created_by: user.id,
+        registered_by: user.id,
+        registered_by_name: user.name || null,
       }
 
-      let { error: err } = await supabase.from('equipment').insert(insertData)
+      let { error: err } = await supabase.from('equipment_items').insert(insertData)
 
       // Fallback: remove optional columns
-      if (
-        err?.message?.includes('created_by') ||
-        err?.message?.includes('column')
-      ) {
-        delete insertData.created_by
-        ;({ error: err } = await supabase.from('equipment').insert(insertData))
+      if (err?.message?.includes('column')) {
+        delete insertData.registered_by
+        delete insertData.registered_by_name
+        delete insertData.product_code
+        ;({ error: err } = await supabase.from('equipment_items').insert(insertData))
       }
 
       if (err) throw new Error(err.message)
@@ -134,7 +134,7 @@ export function useEquipment() {
       if (!user) throw new Error('No user')
 
       const { error: err } = await supabase
-        .from('equipment')
+        .from('equipment_items')
         .update(updates)
         .eq('id', id)
 
@@ -170,7 +170,7 @@ export function useEquipment() {
 
       // Update equipment project_id
       const { error: err } = await supabase
-        .from('equipment')
+        .from('equipment_items')
         .update({ project_id: toProjectId })
         .eq('id', equipmentId)
 
@@ -222,7 +222,7 @@ export function useEquipment() {
 
       // Set equipment status to repair
       await supabase
-        .from('equipment')
+        .from('equipment_items')
         .update({ status: 'repair' })
         .eq('id', rec.equipment_id)
 
