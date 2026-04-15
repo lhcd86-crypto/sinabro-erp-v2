@@ -15,14 +15,14 @@ import { supabase } from '@/lib/supabase'
 interface MaterialOrderRow {
   id: string
   project_id: string
-  material_name: string
-  qty: number
+  item_name: string
+  quantity: number
   unit: string
   urgency: string
   expected_date: string | null
-  requester_id: string
+  requested_by: string
   status: string
-  note: string | null
+  reason: string | null
   created_at: string
 }
 
@@ -130,12 +130,12 @@ export default function MaterialPage() {
       const materialItem = inventory.find((i) => i.id === oMaterial)
       const insertData: Record<string, unknown> = {
         project_id: currentProject,
-        material_name: materialItem?.name || oMaterial,
-        qty,
+        item_name: materialItem?.name || oMaterial,
+        quantity: qty,
         unit: oUnit,
         urgency: oUrgency,
         expected_date: oExpDate || null,
-        requester_id: user.id,
+        requested_by: user.id,
         status: 'pending',
         note: oNote.trim() || null,
       }
@@ -858,10 +858,10 @@ export default function MaterialPage() {
                           {order.created_at?.slice(0, 10) || '-'}
                         </td>
                         <td className="px-3 py-3 text-xs font-medium text-gray-900">
-                          {order.material_name}
+                          {order.item_name}
                         </td>
                         <td className="px-3 py-3 text-xs text-right font-mono font-bold text-gray-900">
-                          {order.qty}
+                          {order.quantity}
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-600">
                           {order.unit}
@@ -898,7 +898,7 @@ export default function MaterialPage() {
                           </span>
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-500 max-w-[150px] truncate">
-                          {order.note || '-'}
+                          {order.reason || '-'}
                         </td>
                         {canManage && (
                           <td className="px-3 py-3 text-center whitespace-nowrap">
