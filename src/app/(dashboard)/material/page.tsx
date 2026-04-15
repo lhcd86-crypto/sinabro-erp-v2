@@ -49,6 +49,7 @@ const TABS: { value: Tab; label: string }[] = [
 export default function MaterialPage() {
   const user = useAuthStore((s) => s.user)
   const currentProject = useAuthStore((s) => s.currentProject)
+  const projects = useAuthStore((s) => s.projects)
 
   const {
     inventory,
@@ -377,13 +378,19 @@ export default function MaterialPage() {
                 <label className="block text-xs font-medium text-gray-600 mb-1">
                   Vi tri / 위치
                 </label>
-                <input
-                  type="text"
+                <select
                   value={iLoc}
                   onChange={(e) => setILoc(e.target.value)}
-                  placeholder="VD: Kho A"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                >
+                  <option value="">-- Chon vi tri / 위치 선택 --</option>
+                  <option value="KHO-01 Kho cong cu">KHO-01 / 공구 창고</option>
+                  <option value="KHO-02 Kho van phong">KHO-02 / 본사 창고</option>
+                  <option value="Cong truong">Cong truong / 현장</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.code}>{p.code} — {p.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="flex justify-end pt-2">
