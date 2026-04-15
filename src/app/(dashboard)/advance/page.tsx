@@ -103,7 +103,12 @@ export default function AdvancePage() {
   }, [])
 
   /* ── KPI calculations ─── */
-  const totalDeposited = deposits.reduce((s, d) => s + (d.amount || 0), 0)
+  // 입금: advance_deposits + advance_requests 중 입금완료 건
+  const depositTotal = deposits.reduce((s, d) => s + (d.amount || 0), 0)
+  const requestDepositTotal = requests
+    .filter((r) => r.status === '입금완료')
+    .reduce((s, r) => s + (r.amount || 0), 0)
+  const totalDeposited = depositTotal + requestDepositTotal
   const totalUsed = advances.reduce((s, a) => s + (a.amount || 0), 0)
   const remaining = totalDeposited - totalUsed
   const pendingCount = requests.filter((r) => r.status === '대기').length
