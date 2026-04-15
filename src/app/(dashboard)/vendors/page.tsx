@@ -10,15 +10,15 @@ import { supabase } from '@/lib/supabase'
 interface Vendor {
   id: string
   project_id: string
-  company_name: string
-  contact_person: string | null
+  name: string
+  representative: string | null
   phone: string | null
   email: string | null
-  category: string
+  vendor_type: string
   address: string | null
-  tax_id: string | null
+  bank_account: string | null
   notes: string | null
-  is_active: boolean
+  rating: boolean
 }
 
 const CATEGORIES = [
@@ -73,7 +73,7 @@ export default function VendorsPage() {
         .from('vendors')
         .select('*')
         .eq('project_id', currentProject)
-        .order('company_name')
+        .order('name')
       if (error) throw error
       setVendors((data ?? []) as Vendor[])
     } catch (e: unknown) {
@@ -97,9 +97,9 @@ export default function VendorsPage() {
 
   const openEdit = (v: Vendor) => {
     setEditing(v)
-    setMCompany(v.company_name); setMContact(v.contact_person ?? ''); setMPhone(v.phone ?? '')
-    setMEmail(v.email ?? ''); setMCat(v.category); setMAddress(v.address ?? '')
-    setMTaxId(v.tax_id ?? ''); setMNotes(v.notes ?? ''); setMActive(v.is_active)
+    setMCompany(v.name); setMContact(v.representative ?? ''); setMPhone(v.phone ?? '')
+    setMEmail(v.email ?? ''); setMCat(v.vendor_type); setMAddress(v.address ?? '')
+    setMTaxId(v.bank_account ?? ''); setMNotes(v.notes ?? ''); setMActive(v.rating)
     setShowModal(true)
   }
 
@@ -111,15 +111,15 @@ export default function VendorsPage() {
     try {
       const payload = {
         project_id: currentProject,
-        company_name: mCompany.trim(),
-        contact_person: mContact.trim() || null,
+        name: mCompany.trim(),
+        representative: mContact.trim() || null,
         phone: mPhone.trim() || null,
         email: mEmail.trim() || null,
-        category: mCat,
+        vendor_type: mCat,
         address: mAddress.trim() || null,
-        tax_id: mTaxId.trim() || null,
+        bank_account: mTaxId.trim() || null,
         notes: mNotes.trim() || null,
-        is_active: mActive,
+        rating: mActive,
       }
       if (editing) {
         const { error } = await supabase.from('vendors').update(payload).eq('id', editing.id)
@@ -141,11 +141,11 @@ export default function VendorsPage() {
 
   /* ── Filtered ── */
   const filtered = vendors.filter((v) => {
-    if (filterCat !== 'all' && v.category !== filterCat) return false
+    if (filterCat !== 'all' && v.vendor_type !== filterCat) return false
     if (search) {
       const q = search.toLowerCase()
-      return v.company_name.toLowerCase().includes(q) ||
-        (v.contact_person ?? '').toLowerCase().includes(q) ||
+      return v.name.toLowerCase().includes(q) ||
+        (v.representative ?? '').toLowerCase().includes(q) ||
         (v.phone ?? '').includes(q)
     }
     return true
@@ -224,17 +224,17 @@ export default function VendorsPage() {
               )}
               {filtered.map((v) => (
                 <tr key={v.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-2 text-gray-900 font-medium whitespace-nowrap">{v.company_name}</td>
+                  <td className="px-5 py-2 text-gray-900 font-medium whitespace-nowrap">{v.name}</td>
                   <td className="px-3 py-2 text-xs whitespace-nowrap">
-                    <span className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">{catLabel(v.category)}</span>
+                    <span className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">{catLabel(v.vendor_type)}</span>
                   </td>
-                  <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{v.contact_person ?? '-'}</td>
+                  <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{v.representative ?? '-'}</td>
                   <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{v.phone ?? '-'}</td>
                   <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{v.email ?? '-'}</td>
-                  <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap font-mono">{v.tax_id ?? '-'}</td>
+                  <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap font-mono">{v.bank_account ?? '-'}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${v.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {v.is_active ? 'Hoat dong / 활동' : 'Ngung / 비활동'}
+                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${v.rating ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {v.rating ? 'Hoat dong / 활동' : 'Ngung / 비활동'}
                     </span>
                   </td>
                   {canManage && (

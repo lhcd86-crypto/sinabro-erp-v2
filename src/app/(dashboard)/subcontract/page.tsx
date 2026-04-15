@@ -10,12 +10,12 @@ import { supabase } from '@/lib/supabase'
 interface SubcontractPayment {
   id: string
   project_id: string
-  subcontractor_name: string
+  vendor_id: string
   work_type: string
-  contract_amount: number
-  paid_amount: number
-  payment_date: string
-  invoice_number: string | null
+  amount: number
+  amount: number
+  paid_date: string
+  status: string | null
   notes: string | null
   status: 'pending' | 'partial' | 'completed'
   created_by: string
@@ -75,7 +75,7 @@ export default function SubcontractPage() {
         .from('subcontract_payments')
         .select('*')
         .eq('project_id', currentProject)
-        .order('payment_date', { ascending: false })
+        .order('paid_date', { ascending: false })
       if (error) throw error
       setPayments(data || [])
     } catch (e) {
@@ -119,12 +119,12 @@ export default function SubcontractPage() {
     try {
       const { error } = await supabase.from('subcontract_payments').insert({
         project_id: currentProject,
-        subcontractor_name: fName.trim(),
+        vendor_id: fName.trim(),
         work_type: fWorkType.trim(),
-        contract_amount: contractAmt,
-        paid_amount: paidAmt,
-        payment_date: fDate,
-        invoice_number: fInvoice.trim() || null,
+        amount: contractAmt,
+        amount: paidAmt,
+        paid_date: fDate,
+        status: fInvoice.trim() || null,
         notes: fNotes.trim() || null,
         status: fStatus,
         created_by: user.id,
@@ -153,8 +153,8 @@ export default function SubcontractPage() {
   const canManage = user ? isAdmin(user.role) : false
 
   /* ── KPI calculations ─── */
-  const totalContract = payments.reduce((s, p) => s + (p.contract_amount || 0), 0)
-  const totalPaid = payments.reduce((s, p) => s + (p.paid_amount || 0), 0)
+  const totalContract = payments.reduce((s, p) => s + (p.amount || 0), 0)
+  const totalPaid = payments.reduce((s, p) => s + (p.amount || 0), 0)
   const totalRemaining = totalContract - totalPaid
 
   if (!currentProject) {
@@ -398,29 +398,29 @@ export default function SubcontractPage() {
               <tbody className="divide-y divide-gray-100">
                 {payments.map((p) => {
                   const st = STATUS_BADGE[p.status] || STATUS_BADGE.pending
-                  const remaining = p.contract_amount - p.paid_amount
+                  const remaining = p.amount - p.amount
                   return (
                     <tr key={p.id} className="hover:bg-gray-50">
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">
-                        {p.payment_date}
+                        {p.paid_date}
                       </td>
                       <td className="px-3 py-3 text-xs font-medium text-gray-900">
-                        {p.subcontractor_name}
+                        {p.vendor_id}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-700">
                         {p.work_type}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono font-bold text-gray-900 whitespace-nowrap">
-                        {fmtVND(p.contract_amount)}
+                        {fmtVND(p.amount)}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono font-bold text-green-700 whitespace-nowrap">
-                        {fmtVND(p.paid_amount)}
+                        {fmtVND(p.amount)}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono font-bold text-amber-700 whitespace-nowrap">
                         {fmtVND(remaining)}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600">
-                        {p.invoice_number || '-'}
+                        {p.status || '-'}
                       </td>
                       <td className="px-3 py-3">
                         <span

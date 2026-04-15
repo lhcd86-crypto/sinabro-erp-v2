@@ -72,7 +72,7 @@ export default function SiteWorkersPage() {
         .from('site_workers')
         .select('*')
         .eq('project_id', currentProject)
-        .order('name')
+        .order('worker_name')
       if (error) throw error
       setWorkers((data ?? []) as SiteWorker[])
     } catch (e: unknown) {
@@ -96,7 +96,7 @@ export default function SiteWorkersPage() {
 
   const openEdit = (w: SiteWorker) => {
     setEditing(w)
-    setMName(w.name); setMType(w.worker_type); setMPhone(w.phone ?? '')
+    setMName(w.worker_name); setMType(w.worker_type); setMPhone(w.phone ?? '')
     setMSkill(w.skill ?? ''); setMHireDate(w.hire_date ?? '')
     setMRate(w.daily_rate ? String(w.daily_rate) : ''); setMActive(w.is_active)
     setShowModal(true)
@@ -245,7 +245,7 @@ export default function SiteWorkersPage() {
               )}
               {filtered.map((w) => (
                 <tr key={w.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-2 text-gray-900 font-medium whitespace-nowrap">{w.name}</td>
+                  <td className="px-5 py-2 text-gray-900 font-medium whitespace-nowrap">{w.worker_name}</td>
                   <td className="px-3 py-2 text-gray-700 text-xs whitespace-nowrap">{typeLabel(w.worker_type)}</td>
                   <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{w.phone ?? '-'}</td>
                   <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{w.skill ?? '-'}</td>

@@ -103,7 +103,7 @@ export default function TBMPage() {
       const [{ data: wk }, { data: recs }] = await Promise.all([
         supabase
           .from('site_workers')
-          .select('id, name, role')
+          .select('id, worker_name, worker_type')
           .eq('project_id', currentProject)
           .order('name'),
         supabase
@@ -157,7 +157,7 @@ export default function TBMPage() {
   async function uploadPhotos(files: File[]): Promise<string[]> {
     const urls: string[] = []
     for (const file of files) {
-      const path = `tbm/${currentProject}/${fDate}_${Date.now()}_${file.name}`
+      const path = `tbm/${currentProject}/${fDate}_${Date.now()}_${file.worker_name}`
       const { error } = await supabase.storage
         .from('report-photos')
         .upload(path, file, { upsert: true })
@@ -406,7 +406,7 @@ export default function TBMPage() {
                       onChange={() => toggleAttendee(w.id)}
                       className="rounded text-green-600 focus:ring-green-500"
                     />
-                    <span className="truncate">{w.name}</span>
+                    <span className="truncate">{w.worker_name}</span>
                   </label>
                 ))}
               </div>

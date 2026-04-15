@@ -12,10 +12,10 @@ interface LaborRate {
   project_id: string
   category: string
   daily_rate: number
-  ot_rate_hour: number
-  night_bonus: number
-  effective_date: string
-  updated_by: string
+  ot_hourly: number
+  note: number
+  effective_from: string
+  note: string
   created_at: string
 }
 
@@ -62,7 +62,7 @@ export default function LaborPage() {
 
   // Edit state: keyed by category
   const [editRates, setEditRates] = useState<
-    Record<string, { daily_rate: string; ot_rate_hour: string; night_bonus: string }>
+    Record<string, { daily_rate: string; ot_hourly: string; note: string }>
   >({})
 
   // Month filter
@@ -84,14 +84,14 @@ export default function LaborPage() {
         .from('labor_rates')
         .select('*')
         .eq('project_id', currentProject)
-        .order('effective_date', { ascending: false })
+        .order('effective_from', { ascending: false })
       if (error) throw error
 
       // Get latest rate per category
       const latestMap: Record<string, LaborRate> = {}
       for (const r of data || []) {
-        if (!latestMap[r.category]) {
-          latestMap[r.category] = r
+        if (!latestMap[r.worker_type]) {
+          latestMap[r.worker_type] = r
         }
       }
 
@@ -100,13 +100,13 @@ export default function LaborPage() {
       setHistory(data || [])
 
       // Initialize edit state
-      const editInit: Record<string, { daily_rate: string; ot_rate_hour: string; night_bonus: string }> = {}
+      const editInit: Record<string, { daily_rate: string; ot_hourly: string; note: string }> = {}
       for (const c of CATEGORIES) {
         const r = latestMap[c.value]
         editInit[c.value] = {
           daily_rate: r ? String(r.daily_rate) : '0',
-          ot_rate_hour: r ? String(r.ot_rate_hour) : '0',
-          night_bonus: r ? String(r.night_bonus) : '0',
+          ot_hourly: r ? String(r.ot_hourly) : '0',
+          note: r ? String(r.note) : '0',
         }
       }
       setEditRates(editInit)
@@ -135,8 +135,8 @@ export default function LaborPage() {
     if (!edit) return
 
     const dailyRate = parseFloat(edit.daily_rate.replace(/[^0-9]/g, '')) || 0
-    const otRate = parseFloat(edit.ot_rate_hour.replace(/[^0-9]/g, '')) || 0
-    const nightBonus = parseFloat(edit.night_bonus.replace(/[^0-9]/g, '')) || 0
+    const otRate = parseFloat(edit.ot_hourly.replace(/[^0-9]/g, '')) || 0
+    const nightBonus = parseFloat(edit.note.replace(/[^0-9]/g, '')) || 0
 
     if (!dailyRate) {
       toast('err', 'Nhap ildan / 일당을 입력하세요')
@@ -149,10 +149,10 @@ export default function LaborPage() {
         project_id: currentProject,
         category,
         daily_rate: dailyRate,
-        ot_rate_hour: otRate,
-        night_bonus: nightBonus,
-        effective_date: today(),
-        updated_by: user.id,
+        ot_hourly: otRate,
+        note: nightBonus,
+        effective_from: today(),
+        note: user.id,
       })
       if (error) throw error
       toast('ok', 'Da luu don gia / 단가 저장 완료')
@@ -174,7 +174,7 @@ export default function LaborPage() {
   const canManage = user ? isAdmin(user.role) : false
 
   // Filter history by month
-  const filteredHistory = history.filter((r) => r.effective_date.startsWith(selectedMonth))
+  const filteredHistory = history.filter((r) => r.effective_from.startsWith(selectedMonth))
 
   if (!currentProject) {
     return (
@@ -239,8 +239,8 @@ export default function LaborPage() {
                 {CATEGORIES.map((cat) => {
                   const edit = editRates[cat.value] || {
                     daily_rate: '0',
-                    ot_rate_hour: '0',
-                    night_bonus: '0',
+                    ot_hourly: '0',
+                    note: '0',
                   }
                   return (
                     <tr key={cat.value} className="hover:bg-gray-50">
@@ -271,15 +271,15 @@ export default function LaborPage() {
                           <input
                             type="text"
                             inputMode="numeric"
-                            value={edit.ot_rate_hour}
+                            value={edit.ot_hourly}
                             onChange={(e) =>
-                              updateEditField(cat.value, 'ot_rate_hour', e.target.value)
+                              updateEditField(cat.value, 'ot_hourly', e.target.value)
                             }
                             className="w-32 border border-gray-300 rounded-lg px-2 py-1 text-xs text-right font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <span className="text-xs font-mono font-bold text-gray-900">
-                            {fmtVND(parseFloat(edit.ot_rate_hour) || 0)}
+                            {fmtVND(parseFloat(edit.ot_hourly) || 0)}
                           </span>
                         )}
                       </td>
@@ -288,15 +288,15 @@ export default function LaborPage() {
                           <input
                             type="text"
                             inputMode="numeric"
-                            value={edit.night_bonus}
+                            value={edit.note}
                             onChange={(e) =>
-                              updateEditField(cat.value, 'night_bonus', e.target.value)
+                              updateEditField(cat.value, 'note', e.target.value)
                             }
                             className="w-32 border border-gray-300 rounded-lg px-2 py-1 text-xs text-right font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         ) : (
                           <span className="text-xs font-mono font-bold text-gray-900">
-                            {fmtVND(parseFloat(edit.night_bonus) || 0)}
+                            {fmtVND(parseFloat(edit.note) || 0)}
                           </span>
                         )}
                       </td>
@@ -358,11 +358,11 @@ export default function LaborPage() {
               <tbody className="divide-y divide-gray-100">
                 {filteredHistory.map((r) => {
                   const catLabel =
-                    CATEGORIES.find((c) => c.value === r.category)?.label || r.category
+                    CATEGORIES.find((c) => c.value === r.worker_type)?.label || r.worker_type
                   return (
                     <tr key={r.id} className="hover:bg-gray-50">
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">
-                        {r.effective_date}
+                        {r.effective_from}
                       </td>
                       <td className="px-3 py-3">
                         <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700">
@@ -373,10 +373,10 @@ export default function LaborPage() {
                         {fmtVND(r.daily_rate)}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono text-gray-700">
-                        {fmtVND(r.ot_rate_hour)}
+                        {fmtVND(r.ot_hourly)}
                       </td>
                       <td className="px-3 py-3 text-xs text-right font-mono text-gray-700">
-                        {fmtVND(r.night_bonus)}
+                        {fmtVND(r.note)}
                       </td>
                     </tr>
                   )

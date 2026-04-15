@@ -10,9 +10,9 @@ import { supabase } from '@/lib/supabase'
 interface DocRecord {
   id: string
   project_id: string
-  document_name: string
-  document_type: string
-  holder_name: string | null
+  title: string
+  doc_type: string
+  person: string | null
   issue_date: string | null
   expiry_date: string
   notes: string | null
@@ -104,8 +104,8 @@ export default function DocExpiryPage() {
 
   const openEdit = (d: DocRecord) => {
     setEditing(d)
-    setMName(d.document_name); setMType(d.document_type)
-    setMHolder(d.holder_name ?? ''); setMIssue(d.issue_date ?? '')
+    setMName(d.title); setMType(d.doc_type)
+    setMHolder(d.person ?? ''); setMIssue(d.issue_date ?? '')
     setMExpiry(d.expiry_date); setMNotes(d.notes ?? '')
     setShowModal(true)
   }
@@ -118,9 +118,9 @@ export default function DocExpiryPage() {
     try {
       const payload = {
         project_id: currentProject,
-        document_name: mName.trim(),
-        document_type: mType,
-        holder_name: mHolder.trim() || null,
+        title: mName.trim(),
+        doc_type: mType,
+        person: mHolder.trim() || null,
         issue_date: mIssue || null,
         expiry_date: mExpiry,
         notes: mNotes.trim() || null,
@@ -239,11 +239,11 @@ export default function DocExpiryPage() {
                 const ec = expiryColor(days)
                 return (
                   <tr key={d.id} className="hover:bg-gray-50">
-                    <td className="px-5 py-2 text-gray-900 font-medium whitespace-nowrap">{d.document_name}</td>
+                    <td className="px-5 py-2 text-gray-900 font-medium whitespace-nowrap">{d.title}</td>
                     <td className="px-3 py-2 text-xs whitespace-nowrap">
-                      <span className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">{docTypeLabel(d.document_type)}</span>
+                      <span className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">{docTypeLabel(d.doc_type)}</span>
                     </td>
-                    <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{d.holder_name ?? '-'}</td>
+                    <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{d.person ?? '-'}</td>
                     <td className="px-3 py-2 text-gray-700 whitespace-nowrap font-mono">{d.issue_date ?? '-'}</td>
                     <td className="px-3 py-2 text-gray-700 whitespace-nowrap font-mono">{d.expiry_date}</td>
                     <td className="px-3 py-2 whitespace-nowrap">

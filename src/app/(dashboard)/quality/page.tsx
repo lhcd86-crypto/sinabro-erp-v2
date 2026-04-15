@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase'
 interface QualityInspection {
   id: string
   project_id: string
-  inspection_date: string
+  created_at: string
   inspection_type: string
   location: string
   inspector: string
@@ -86,7 +86,7 @@ export default function QualityPage() {
         .from('quality_inspections')
         .select('*')
         .eq('project_id', currentProject)
-        .order('inspection_date', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(50)
       setRecords((data as QualityInspection[]) ?? [])
     } catch {
@@ -140,7 +140,7 @@ export default function QualityPage() {
 
       const { error } = await supabase.from('quality_inspections').insert({
         project_id: currentProject,
-        inspection_date: fDate,
+        created_at: fDate,
         inspection_type: fType,
         location: fLocation.trim(),
         inspector: fInspector.trim(),
@@ -445,7 +445,7 @@ export default function QualityPage() {
                   return (
                     <tr key={rec.id} className="hover:bg-gray-50">
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono whitespace-nowrap">
-                        {rec.inspection_date}
+                        {rec.created_at}
                       </td>
                       <td className="px-3 py-3 text-xs">
                         <span className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-semibold">
