@@ -56,9 +56,10 @@ const UNITS = [
 ]
 
 const STATUSES = [
-  { value: 'pending', label: '대기 / Cho', color: 'bg-gray-100 text-gray-700' },
-  { value: 'confirmed', label: '확인 / Xac nhan', color: 'bg-blue-100 text-blue-700' },
-  { value: 'billed', label: '청구 / Thanh toan', color: 'bg-green-100 text-green-700' },
+  { value: 'pending', label: '① 대기 / Cho duyet', color: 'bg-gray-100 text-gray-700', next: 'QS 확인 대기' },
+  { value: 'confirmed', label: '② QS확인 / QS xac nhan', color: 'bg-blue-100 text-blue-700', next: '현장임원 승인 대기' },
+  { value: 'approved', label: '③ 승인 / Da duyet', color: 'bg-indigo-100 text-indigo-700', next: '기성 청구 대기' },
+  { value: 'billed', label: '④ 청구 / Da thanh toan', color: 'bg-green-100 text-green-700', next: '완료' },
 ]
 
 function today() {
@@ -195,7 +196,11 @@ export default function AddWorkPage() {
     try {
       const { error } = await supabase
         .from('additional_works')
-        .update({ status: newStatus })
+        .update({
+          status: newStatus,
+          approved_by: user?.id ?? null,
+          approved_at: new Date().toISOString(),
+        })
         .eq('id', id)
       if (error) throw error
       toast('ok', 'Da cap nhat / 상태 변경 완료')
@@ -515,29 +520,37 @@ export default function AddWorkPage() {
                       </td>
                       {userIsAdmin && (
                         <td className="px-3 py-3 text-xs">
-                          <div className="flex gap-1">
+                          <div className="flex flex-col gap-1">
                             {w.status === 'pending' && (
                               <button
                                 onClick={() => updateStatus(w.id, 'confirmed')}
                                 className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-[10px] font-medium hover:bg-blue-100 transition-colors"
                               >
-                                Xac nhan / 확인
+                                → QS 확인
                               </button>
                             )}
                             {w.status === 'confirmed' && (
                               <button
+                                onClick={() => updateStatus(w.id, 'approved')}
+                                className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-[10px] font-medium hover:bg-indigo-100 transition-colors"
+                              >
+                                → 임원 승인
+                              </button>
+                            )}
+                            {w.status === 'approved' && (
+                              <button
                                 onClick={() => updateStatus(w.id, 'billed')}
                                 className="px-2 py-1 bg-green-50 text-green-700 rounded text-[10px] font-medium hover:bg-green-100 transition-colors"
                               >
-                                Thanh toan / 청구
+                                → 기성 청구
                               </button>
                             )}
-                            {w.status !== 'pending' && (
+                            {w.status !== 'pending' && w.status !== 'billed' && (
                               <button
                                 onClick={() => updateStatus(w.id, 'pending')}
                                 className="px-2 py-1 bg-gray-50 text-gray-600 rounded text-[10px] font-medium hover:bg-gray-100 transition-colors"
                               >
-                                Reset / 초기화
+                                ← 되돌리기
                               </button>
                             )}
                           </div>
