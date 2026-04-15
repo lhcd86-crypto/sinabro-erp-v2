@@ -444,7 +444,7 @@ export default function EquipmentPage() {
                   <option value="">-- Chon thiet bi / 장비 선택 --</option>
                   {equipment.map((eq) => (
                     <option key={eq.id} value={eq.id}>
-                      {eq.name} ({eq.code})
+                      {eq.name} ({eq.product_code ?? eq.code})
                     </option>
                   ))}
                 </select>
@@ -546,7 +546,7 @@ export default function EquipmentPage() {
                         {eq.name}
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600 font-mono">
-                        {eq.code}
+                        {eq.product_code ?? eq.code}
                       </td>
                       <td className="px-3 py-3">
                         <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700">

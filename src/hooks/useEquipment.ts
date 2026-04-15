@@ -9,6 +9,7 @@ export interface EquipmentRecord {
   project_id: string | null
   name: string
   code: string
+  product_code: string | null
   category: string
   status: string
   note: string | null
