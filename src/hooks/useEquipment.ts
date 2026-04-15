@@ -13,6 +13,7 @@ export interface EquipmentRecord {
   status: string
   note: string | null
   photo_url: string | null
+  current_project_id: string | null
   created_at: string
   projects?: { code: string; name: string } | null
 }

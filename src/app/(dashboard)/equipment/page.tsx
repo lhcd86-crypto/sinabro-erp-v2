@@ -561,17 +561,27 @@ export default function EquipmentPage() {
                         </span>
                       </td>
                       <td className="px-3 py-3 text-xs text-gray-600">
-                        {eq.projects?.code || eq.projects?.name || '-'}
+                        {eq.current_project_id
+                          ? projects.find((p) => p.id === eq.current_project_id)?.code
+                            || projects.find((p) => p.id === eq.project_id)?.code
+                            || '-'
+                          : eq.project_id
+                            ? projects.find((p) => p.id === eq.project_id)?.code || '-'
+                            : '-'}
                       </td>
                       <td className="px-3 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
                           {canManage && eq.status !== 'active' && (
                             <button
-                              onClick={() =>
-                                updateEquipment(eq.id, { status: 'active' }).catch(
+                              onClick={() => {
+                                if (!currentProject) {
+                                  toast('err', 'Chon cong trinh truoc / 현장을 먼저 선택하세요')
+                                  return
+                                }
+                                updateEquipment(eq.id, { status: 'active', current_project_id: currentProject }).catch(
                                   (err) => toast('err', err.message),
                                 )
-                              }
+                              }}
                               className="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                             >
                               Kich hoat / 가동
