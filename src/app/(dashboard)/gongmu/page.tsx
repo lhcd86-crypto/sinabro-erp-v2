@@ -43,16 +43,26 @@ export default function GongmuPage() {
   const totalCount = reports.length
 
   /* ── Helpers ── */
-  const workerTotal = (w?: WorkerCounts) => {
-    if (!w) return 0
+  const workerTotal = (r: DailyReportRow) => {
     return (
-      (w.wd_am ?? 0) + (w.wd_pm ?? 0) + (w.wd_ni ?? 0) +
-      (w.wi_am ?? 0) + (w.wi_pm ?? 0) + (w.wi_ni ?? 0) +
-      (w.vn_am ?? 0) + (w.vn_pm ?? 0) + (w.vn_ni ?? 0)
+      (r.direct_worker_am ?? 0) + (r.direct_worker_pm ?? 0) + (r.direct_worker_ni ?? 0) +
+      (r.indirect_worker_am ?? 0) + (r.indirect_worker_pm ?? 0) + (r.indirect_worker_ni ?? 0) +
+      (r.vn_engineer_am ?? 0) + (r.vn_engineer_pm ?? 0) + (r.vn_engineer_ni ?? 0)
     )
   }
 
   const matSummary = (r: DailyReportRow) => {
+    const parts: string[] = []
+    if (r.qty_v250) parts.push(`V250:${r.qty_v250}m`)
+    if (r.qty_sv250) parts.push(`SV:${r.qty_sv250}m`)
+    if (r.qty_hlm) parts.push(`HLM:${r.qty_hlm}k`)
+    if (r.qty_m230) parts.push(`M230:${r.qty_m230}k`)
+    if (r.qty_db2015) parts.push(`DB:${r.qty_db2015}m`)
+    if (r.qty_other) parts.push(`etc:${r.qty_other}`)
+    return parts.length > 0 ? parts.join(', ') : '-'
+  }
+
+  const _matSummaryOld = (r: DailyReportRow) => {
     const m = r.materials
     if (!m) return '-'
     const parts: string[] = []
@@ -249,7 +259,7 @@ export default function GongmuPage() {
                     }`}
                   >
                     <td className="py-2 pr-2 whitespace-nowrap font-medium text-gray-700">
-                      {r.date}
+                      {r.report_date}
                     </td>
                     <td className="py-2 pr-2 text-gray-600 max-w-[140px] truncate">
                       {projectLabel(r)}
@@ -258,10 +268,10 @@ export default function GongmuPage() {
                       {r.work_type}
                     </td>
                     <td className="py-2 pr-2 text-gray-600 max-w-[180px] truncate">
-                      {r.description}
+                      {r.work_desc}
                     </td>
                     <td className="py-2 pr-2 text-center font-semibold text-blue-700">
-                      {workerTotal(r.workers)}
+                      {workerTotal(r)}
                     </td>
                     <td className="py-2 pr-2 text-gray-500 max-w-[160px] truncate">
                       {matSummary(r)}
@@ -345,7 +355,7 @@ export default function GongmuPage() {
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
                     <td className="py-2 pr-2 whitespace-nowrap font-medium text-gray-700">
-                      {r.date}
+                      {r.report_date}
                     </td>
                     <td className="py-2 pr-2 text-gray-600 max-w-[140px] truncate">
                       {projectLabel(r)}
@@ -354,10 +364,10 @@ export default function GongmuPage() {
                       {r.work_type}
                     </td>
                     <td className="py-2 pr-2 text-gray-600 max-w-[200px] truncate">
-                      {r.description}
+                      {r.work_desc}
                     </td>
                     <td className="py-2 pr-2 text-center font-semibold text-blue-700">
-                      {workerTotal(r.workers)}
+                      {workerTotal(r)}
                     </td>
                     <td className="py-2 text-center text-gray-500 whitespace-nowrap">
                       {r.confirmed_at

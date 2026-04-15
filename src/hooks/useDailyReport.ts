@@ -47,20 +47,42 @@ export interface ReportFormData {
 export interface DailyReportRow {
   id: string
   project_id: string
-  date: string
+  report_date: string
+  date: string // alias for report_date
   work_type: string
   weather: string
+  // DB individual columns
+  direct_worker_am: number
+  direct_worker_pm: number
+  direct_worker_ni: number
+  indirect_worker_am: number
+  indirect_worker_pm: number
+  indirect_worker_ni: number
+  vn_engineer_am: number
+  vn_engineer_pm: number
+  vn_engineer_ni: number
+  // Legacy computed fields
   workers: WorkerCounts
   materials: MaterialQty
   extra_materials: ExtraMaterial[]
-  description: string
+  work_desc: string
+  description: string // alias
   photo_urls: string[]
-  created_by: string
+  note: string
+  user_id: string
+  created_by: string // alias
   created_at: string
   confirmed: boolean
   confirmed_at: string | null
   confirmed_by: string | null
   revision_requested: boolean
+  revision_comment: string | null
+  qty_v250: number
+  qty_sv250: number
+  qty_hlm: number
+  qty_m230: number
+  qty_db2015: number
+  qty_other: number
   projects?: { code: string; name: string }
   users?: { name: string }
 }
