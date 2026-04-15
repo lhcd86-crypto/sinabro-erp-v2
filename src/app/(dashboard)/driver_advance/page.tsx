@@ -11,7 +11,7 @@ interface VehicleCost {
   id: string
   project_id: string
   vehicle_id: string | null
-  plate_number: string | null
+  plate_no: string | null
   cost_type: string
   amount: number
   date: string
@@ -23,7 +23,7 @@ interface VehicleCost {
 
 interface VehicleOption {
   id: string
-  plate_number: string
+  plate_no: string
 }
 
 const COST_TYPES = [
@@ -79,7 +79,7 @@ export default function DriverAdvancePage() {
     try {
       const [cRes, vRes] = await Promise.all([
         supabase.from('vehicle_costs').select('*').eq('project_id', currentProject).order('date', { ascending: false }),
-        supabase.from('vehicles').select('id, plate_number').eq('project_id', currentProject).order('plate_number'),
+        supabase.from('vehicles').select('id, plate_no').order('plate_no'),
       ])
       if (cRes.error) throw cRes.error
       setCosts((cRes.data ?? []) as VehicleCost[])
@@ -99,7 +99,7 @@ export default function DriverAdvancePage() {
   const handleVehicleSelect = (id: string) => {
     setFVehicleId(id)
     const v = vehicleOpts.find((o) => o.id === id)
-    if (v) setFPlate(v.plate_number)
+    if (v) setFPlate(v.plate_no)
   }
 
   /* ── Upload photo ── */
@@ -128,7 +128,7 @@ export default function DriverAdvancePage() {
       const payload = {
         project_id: currentProject,
         vehicle_id: fVehicleId || null,
-        plate_number: fPlate.trim() || null,
+        plate_no: fPlate.trim() || null,
         cost_type: fType,
         amount,
         date: fDate,
@@ -210,7 +210,7 @@ export default function DriverAdvancePage() {
             <label className="block text-xs font-medium text-gray-600 mb-1">Xe / 차량</label>
             <select value={fVehicleId} onChange={(e) => handleVehicleSelect(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="">-- Chon xe / 선택 --</option>
-              {vehicleOpts.map((v) => <option key={v.id} value={v.id}>{v.plate_number}</option>)}
+              {vehicleOpts.map((v) => <option key={v.id} value={v.id}>{v.plate_no}</option>)}
             </select>
           </div>
           <div>
@@ -269,7 +269,7 @@ export default function DriverAdvancePage() {
                 {costs.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap font-mono">{c.date}</td>
-                    <td className="px-4 py-3 text-xs text-gray-700 whitespace-nowrap font-mono">{c.plate_number ?? '-'}</td>
+                    <td className="px-4 py-3 text-xs text-gray-700 whitespace-nowrap font-mono">{c.plate_no ?? '-'}</td>
                     <td className="px-4 py-3">
                       <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700">{costLabel(c.cost_type)}</span>
                     </td>
