@@ -9,14 +9,12 @@ import { supabase } from '@/lib/supabase'
 
 interface Vehicle {
   id: string
-  project_id: string
-  plate_number: string
+  plate_no: string
   vehicle_type: string
-  driver_id: string | null
-  driver_name: string | null
+  assigned_driver_id: string | null
   status: string
-  registration_expiry: string | null
   insurance_expiry: string | null
+  inspection_expiry: string | null
   notes: string | null
 }
 
@@ -95,7 +93,7 @@ export default function VehiclePage() {
     setLoading(true)
     try {
       const [vRes, dRes] = await Promise.all([
-        supabase.from('vehicles').select('*').eq('project_id', currentProject).order('plate_number'),
+        supabase.from('vehicles').select('*').order('plate_no'),
         supabase.from('users').select('id, name').eq('role', 'driver').order('name'),
       ])
       if (vRes.error) throw vRes.error
@@ -122,9 +120,9 @@ export default function VehiclePage() {
 
   const openEdit = (v: Vehicle) => {
     setEditing(v)
-    setMPlate(v.plate_number); setMType(v.vehicle_type)
-    setMDriverId(v.driver_id ?? ''); setMDriverName(v.driver_name ?? '')
-    setMStatus(v.status); setMRegExpiry(v.registration_expiry ?? '')
+    setMPlate(v.plate_no); setMType(v.vehicle_type)
+    setMDriverId(v.assigned_driver_id ?? ''); setMDriverName(drivers.find(d=>d.id===v.assigned_driver_id)?.name ?? '')
+    setMStatus(v.status); setMRegExpiry(v.inspection_expiry ?? '')
     setMInsExpiry(v.insurance_expiry ?? ''); setMNotes(v.notes ?? '')
     setShowModal(true)
   }
@@ -141,14 +139,12 @@ export default function VehiclePage() {
     if (!currentProject) return
     setSaving(true)
     try {
-      const payload = {
-        project_id: currentProject,
-        plate_number: mPlate.trim(),
+      const payload: Record<string, unknown> = {
+        plate_no: mPlate.trim(),
         vehicle_type: mType,
-        driver_id: mDriverId || null,
-        driver_name: mDriverName.trim() || null,
+        assigned_driver_id: mDriverId || null,
         status: mStatus,
-        registration_expiry: mRegExpiry || null,
+        inspection_expiry: mRegExpiry || null,
         insurance_expiry: mInsExpiry || null,
         notes: mNotes.trim() || null,
       }
@@ -235,18 +231,18 @@ export default function VehiclePage() {
               )}
               {vehicles.map((v) => {
                 const si = statusInfo(v.status)
-                const regBadge = expiryBadge(v.registration_expiry)
+                const regBadge = expiryBadge(v.inspection_expiry)
                 const insBadge = expiryBadge(v.insurance_expiry)
                 return (
                   <tr key={v.id} className="hover:bg-gray-50">
-                    <td className="px-5 py-2 text-gray-900 font-medium font-mono whitespace-nowrap">{v.plate_number}</td>
+                    <td className="px-5 py-2 text-gray-900 font-medium font-mono whitespace-nowrap">{v.plate_no}</td>
                     <td className="px-3 py-2 text-gray-700 text-xs whitespace-nowrap">{typeLabel(v.vehicle_type)}</td>
-                    <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{v.driver_name ?? '-'}</td>
+                    <td className="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{drivers.find(d=>d.id===v.assigned_driver_id)?.name ?? '-'}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${si.bg} ${si.text}`}>{si.label}</span>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
-                      <span className="text-xs text-gray-700 font-mono">{v.registration_expiry ?? '-'}</span>
+                      <span className="text-xs text-gray-700 font-mono">{v.inspection_expiry ?? '-'}</span>
                       {regBadge && <span className={`ml-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${regBadge.style}`}>{regBadge.label}</span>}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
