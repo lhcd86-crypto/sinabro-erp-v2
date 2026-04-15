@@ -12,6 +12,7 @@ export interface EquipmentRecord {
   category: string
   status: string
   note: string | null
+  photo_url: string | null
   created_at: string
   projects?: { code: string; name: string } | null
 }

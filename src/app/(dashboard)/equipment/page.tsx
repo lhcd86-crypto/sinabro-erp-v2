@@ -61,6 +61,8 @@ export default function EquipmentPage() {
   const [fCode, setFCode] = useState('')
   const [fCat, setFCat] = useState('heavy')
   const [fStatus, setFStatus] = useState('active')
+  const [fPhoto, setFPhoto] = useState<File | null>(null)
+  const [fPhotoPreview, setFPhotoPreview] = useState<string | null>(null)
 
   // Transfer
   const [transferId, setTransferId] = useState<string | null>(null)
@@ -146,16 +148,51 @@ export default function EquipmentPage() {
     }
     setSaving(true)
     try {
+      // Upload photo if selected
+      let photoUrl: string | null = null
+      if (fPhoto) {
+        const path = `equipment/${currentProject}/${Date.now()}_${fPhoto.name}`
+        const { error: upErr } = await supabase.storage
+          .from('report-photos')
+          .upload(path, fPhoto, { upsert: true })
+        if (!upErr) {
+          const { data: urlData } = supabase.storage.from('report-photos').getPublicUrl(path)
+          photoUrl = urlData?.publicUrl ?? null
+        }
+      }
+
       await addEquipment({
         name: fName.trim(),
         code: fCode.trim(),
         category: fCat,
         status: fStatus,
+        note: photoUrl ? `photo:${photoUrl}` : undefined,
       })
+
+      // Update photo_url column directly if photo was uploaded
+      if (photoUrl) {
+        // Get the latest equipment item we just added
+        const { data: latest } = await supabase
+          .from('equipment_items')
+          .select('id')
+          .eq('name', fName.trim())
+          .eq('project_id', currentProject)
+          .order('created_at', { ascending: false })
+          .limit(1)
+        if (latest?.[0]?.id) {
+          await supabase
+            .from('equipment_items')
+            .update({ photo_url: photoUrl })
+            .eq('id', latest[0].id)
+        }
+      }
+
       setFName('')
       setFCode('')
       setFCat('heavy')
       setFStatus('active')
+      setFPhoto(null)
+      setFPhotoPreview(null)
       setShowAdd(false)
       toast('ok', 'Da them thiet bi / 장비 등록 완료')
     } catch (e) {
@@ -344,6 +381,34 @@ export default function EquipmentPage() {
                 </select>
               </div>
             </div>
+            {/* Photo upload */}
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Hinh anh / 장비 사진
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null
+                    setFPhoto(file)
+                    if (file) {
+                      const reader = new FileReader()
+                      reader.onload = (ev) => setFPhotoPreview(ev.target?.result as string)
+                      reader.readAsDataURL(file)
+                    } else {
+                      setFPhotoPreview(null)
+                    }
+                  }}
+                  className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                {fPhotoPreview && (
+                  <img src={fPhotoPreview} alt="preview" className="w-16 h-16 object-cover rounded-lg border" />
+                )}
+              </div>
+            </div>
             <div className="flex justify-end pt-2">
               <button
                 onClick={handleAdd}
@@ -451,6 +516,7 @@ export default function EquipmentPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3">Anh / 사진</th>
                   <th className="px-3 py-3">Ten / 장비명</th>
                   <th className="px-3 py-3">Ma / 코드</th>
                   <th className="px-3 py-3">Loai / 분류</th>
@@ -464,6 +530,13 @@ export default function EquipmentPage() {
                   const st = STATUS_BADGE[eq.status] || STATUS_BADGE.idle
                   return (
                     <tr key={eq.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-2">
+                        {eq.photo_url ? (
+                          <img src={eq.photo_url} alt={eq.name} className="w-10 h-10 object-cover rounded border" />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-100 rounded border flex items-center justify-center text-gray-400 text-xs">-</div>
+                        )}
+                      </td>
                       <td className="px-3 py-3 text-xs font-medium text-gray-900">
                         {eq.name}
                       </td>
