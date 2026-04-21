@@ -64,6 +64,11 @@ export default function EquipmentPage() {
   const [fPhoto, setFPhoto] = useState<File | null>(null)
   const [fPhotoPreview, setFPhotoPreview] = useState<string | null>(null)
 
+  // List filters
+  const [listSearch, setListSearch] = useState('')
+  const [listStatus, setListStatus] = useState<'all' | 'active' | 'idle' | 'repair'>('all')
+  const [listCategory, setListCategory] = useState('all')
+
   // Transfer
   const [transferId, setTransferId] = useState<string | null>(null)
   const [transferTo, setTransferTo] = useState('')
@@ -250,6 +255,19 @@ export default function EquipmentPage() {
   }
 
   const canManage = user ? isAdmin(user.role) : false
+
+  const filteredEquipment = equipment.filter((eq) => {
+    if (listStatus !== 'all' && (eq.status ?? 'idle') !== listStatus) return false
+    if (listCategory !== 'all' && (eq.category ?? '') !== listCategory) return false
+    if (listSearch) {
+      const q = listSearch.toLowerCase()
+      const hit =
+        (eq.name ?? '').toLowerCase().includes(q) ||
+        (eq.product_code ?? '').toLowerCase().includes(q)
+      if (!hit) return false
+    }
+    return true
+  })
 
   if (!currentProject) {
     return (
@@ -488,13 +506,60 @@ export default function EquipmentPage() {
 
       {/* ── Equipment Table ── */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">
-            Danh sach thiet bi / 장비 목록
-          </h3>
-          <span className="text-xs text-gray-500">
-            Tong / 총 {equipment.length}
-          </span>
+        <div className="px-4 py-3 border-b border-gray-200 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">
+              Danh sach thiet bi / 장비 목록
+            </h3>
+            <span className="text-xs text-gray-500">
+              {listSearch || listStatus !== 'all' || listCategory !== 'all'
+                ? `${filteredEquipment.length} / ${equipment.length}`
+                : `Tong / 총 ${equipment.length}`}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+            <input
+              type="text"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+              placeholder="Tim ten/ma / 이름·코드 검색"
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <select
+              value={listStatus}
+              onChange={(e) => setListStatus(e.target.value as typeof listStatus)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">Tat ca trang thai / 전체 상태</option>
+              <option value="active">Hoat dong / 가동중</option>
+              <option value="repair">Sua chua / 수리중</option>
+              <option value="idle">Nghi / 대기</option>
+            </select>
+            <select
+              value={listCategory}
+              onChange={(e) => setListCategory(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">Tat ca phan loai / 전체 분류</option>
+              {EQUIPMENT_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            {(listSearch || listStatus !== 'all' || listCategory !== 'all') && (
+              <button
+                onClick={() => {
+                  setListSearch('')
+                  setListStatus('all')
+                  setListCategory('all')
+                }}
+                className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Xoa loc / 필터 초기화
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -504,6 +569,10 @@ export default function EquipmentPage() {
         ) : equipment.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-400">
             Chua co thiet bi / 장비 없음
+          </div>
+        ) : filteredEquipment.length === 0 ? (
+          <div className="p-8 text-center text-sm text-gray-400">
+            Khong co ket qua / 검색 결과 없음
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -520,7 +589,7 @@ export default function EquipmentPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {equipment.map((eq) => {
+                {filteredEquipment.map((eq) => {
                   const st = STATUS_BADGE[eq.status ?? 'idle'] || STATUS_BADGE.idle
                   return (
                     <tr key={eq.id} className="hover:bg-gray-50">
@@ -572,45 +641,77 @@ export default function EquipmentPage() {
                       </td>
                       <td className="px-3 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
-                          {canManage && eq.status !== 'active' && (
+                          {eq.status === 'active' && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  updateEquipment(eq.id, { status: 'repair' })
+                                    .then(() => toast('ok', 'Da chuyen sang sua chua / 수리중으로 변경'))
+                                    .catch((err) => toast('err', err.message))
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                              >
+                                Sua chua / 수리
+                              </button>
+                              {canManage && (
+                                <button
+                                  onClick={() =>
+                                    updateEquipment(eq.id, { status: 'idle' }).catch(
+                                      (err) => toast('err', err.message),
+                                    )
+                                  }
+                                  className="px-2 py-1 text-xs font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                                >
+                                  Cho nghi / 대기
+                                </button>
+                              )}
+                            </>
+                          )}
+                          {eq.status === 'repair' && canManage && (
                             <button
                               onClick={() => {
                                 if (!currentProject) {
                                   toast('err', 'Chon cong trinh truoc / 현장을 먼저 선택하세요')
                                   return
                                 }
-                                updateEquipment(eq.id, { status: 'active', current_project_id: currentProject }).catch(
-                                  (err) => toast('err', err.message),
-                                )
+                                updateEquipment(eq.id, { status: 'active', current_project_id: currentProject })
+                                  .then(() => toast('ok', 'Hoan tat sua / 수리 완료'))
+                                  .catch((err) => toast('err', err.message))
                               }}
                               className="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                             >
-                              Kich hoat / 가동
+                              Hoan tat sua / 수리완료
                             </button>
                           )}
-                          {canManage && eq.status !== 'idle' && (
-                            <button
-                              onClick={() =>
-                                updateEquipment(eq.id, { status: 'idle' }).catch(
-                                  (err) => toast('err', err.message),
-                                )
-                              }
-                              className="px-2 py-1 text-xs font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                            >
-                              Nghi / 대기
-                            </button>
-                          )}
-                          {eq.status !== 'repair' && (
-                            <button
-                              onClick={() => {
-                                updateEquipment(eq.id, { status: 'repair' })
-                                  .then(() => toast('ok', 'Da chuyen sang sua chua / 수리중으로 변경'))
-                                  .catch((err) => toast('err', err.message))
-                              }}
-                              className="px-2 py-1 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                            >
-                              Sua chua / 수리
-                            </button>
+                          {eq.status === 'idle' && (
+                            <>
+                              {canManage && (
+                                <button
+                                  onClick={() => {
+                                    if (!currentProject) {
+                                      toast('err', 'Chon cong trinh truoc / 현장을 먼저 선택하세요')
+                                      return
+                                    }
+                                    updateEquipment(eq.id, { status: 'active', current_project_id: currentProject }).catch(
+                                      (err) => toast('err', err.message),
+                                    )
+                                  }}
+                                  className="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                >
+                                  Kich hoat / 가동
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  updateEquipment(eq.id, { status: 'repair' })
+                                    .then(() => toast('ok', 'Da chuyen sang sua chua / 수리중으로 변경'))
+                                    .catch((err) => toast('err', err.message))
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                              >
+                                Sua chua / 수리
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
